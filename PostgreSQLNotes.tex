@@ -1,0 +1,1740 @@
+\documentclass[12pt,a4paper]{book}
+
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage[italian]{babel}
+\usepackage{geometry}
+\usepackage{amsmath,mathtools,breqn,amsfonts}
+\usepackage{makecell}
+\usepackage{listings}
+\usepackage{csquotes}
+\usepackage{color}
+\usepackage{hyperref}
+\usepackage{textcomp}
+\usepackage[breakable,skins]{tcolorbox}
+
+\definecolor{dkgreen}{rgb}{0,0.6,0}
+\definecolor{gray}{rgb}{0.5,0.5,0.5}
+\definecolor{mauve}{rgb}{0.58,0,0.82}
+\definecolor{crimson}{rgb}{0.95, 0.07, 0.23}
+
+
+\geometry{a4paper,left=2cm,right=2cm}
+
+\hypersetup{
+	colorlinks,
+	citecolor=black,
+	filecolor=black,
+	linkcolor=black,
+	urlcolor=black	
+}
+
+%  Titolo e autore
+\title{Corso di Basi di Dati (Laboratorio)\\
+	Introduzione a PostgreSQL}
+\author{Magdalena M. Solitro}
+
+
+\begin{document}
+	\frontmatter
+	
+	\maketitle
+	
+	\tableofcontents
+	
+	\mainmatter
+	
+	\chapter{Introduzione}
+	\lstset{
+		language=SQL,
+		aboveskip=3mm,
+		belowskip=3mm,
+		showstringspaces=false,
+		columns=flexible,
+		basicstyle={\small\ttfamily},
+		numbers=none,
+		numberstyle=\tiny\color{gray},
+		keywordstyle=\color{blue},
+		commentstyle=\color{dkgreen},
+		stringstyle=\color{mauve},
+		breaklines=true,
+		breakatwhitespace=true,
+		tabsize=4
+	}
+	Structured Query Language (SQL) è il linguaggio più diffuso per l'interazione con database relazionali (RDBMS), è stato definito negli anni '70 per poi essere standardizzato nel corso degli anni '80 e '90 da ISO e IEC.\\
+	I costrutti di SQL possono essere distinti in quattro categorie:
+	\begin{itemize}
+		\item \textit{Data Definition Language (DDL)}, linguaggio per la definizione delle strutture dati e dei vincoli di integrità
+		\item \textit{Data Manipulation Language (DML)}, linguaggio per la manipolazione dei dati, consente l'inserimento, l'aggiornamento e la cancellazione di dati.
+		\item \textit{Data Query Language (DQL)}, linguaggio di interrogazione del database, serve per ottenere i dati desiderati 
+		\item \textit{Data Control Language (DCL)}, linguaggio per controllare la base di dati (non sarà trattato in questo corso)
+	\end{itemize}
+	Originariamente, SQL era nato come linguaggio \textit{puramente dichiarativo},  ma nel corso degli anni si è evoluto ed è stata introdotta la possibilità di inserire costrutti procedurali, istruzioni per il controllo di flusso, tipi di dati definiti dall'utente e altre estensioni. A partire dalla definizione dello standard SQL:1999 molte di queste estensioni sono state formalmente adottate come parte integrante di SQL nella sezione SQL/PSM dello standard.\footnote{fonte: https://it.wikipedia.org/wiki/Structured_Query_Language }
+	\section{Sintassi}
+	Un comando SQL è una sequenza di token terminate da un punto e virgola (;).\\
+	I commenti sono preceduti da due trattini consecutivi (una singola riga di commento), oppure sono delimitati da \texttt{/* ... */} (commenti multilinea).\\
+	È importante ricordare che \textbf{le keyword e gli identificatori che non siano racchiusi tra doppi apici sono casi insensitive}. Quindi:
+	\begin{lstlisting}
+	SELECT * FROM user;
+	\end{lstlisting}
+	è equivalente a:
+	\begin{lstlisting}
+	select * from user;
+	\end{lstlisting}
+	ed è equivale anche a:
+	\begin{lstlisting}
+	sElEcT * FrOm uSer;
+	\end{lstlisting}
+	Gli operatori di base in SQL sono: 
+	\begin{itemize}
+		\item aritmetici: addizione (\texttt{+}), sottrazione (\texttt{-}), moltiplicazione (\texttt{*}), divisione (\texttt{/})
+		\item di confronto: minore (\texttt{<}), minore o uguale (\texttt{<=}), uguale (\texttt{=}), maggiore (\texttt{>}), maggiore o uguale (\texttt{>=}), diverso (\texttt{<>})
+		\item logici: not (\texttt{NOT}), and (\texttt{AND}), or (\texttt{OR})
+	\end{itemize}
+	\chapter{Data Definition Language (DDL)}
+	Il \textit{Data Definition Language (DDL)} comprende un sottoinsieme di istruzioni che servono a creare nuove tabelle, modificare la struttura di quelle esistenti, aggiungere e rimuovere vincoli o eliminare intere tabelle.\\I comandi principali che effettuano questo operazioni sono: \texttt{CREATE TABLE, DROP TABLE, ALTER TABLE...}
+	\section{Creazione di tabelle}
+	La creazione di una nuova tabella si effettua tramite un comando di questo tipo:
+	\begin{lstlisting}
+	CREATE TABLE persona (
+		nome TEXT,
+		cognome VARCHAR(30),
+		dataNascita DATE
+	);
+	\end{lstlisting}
+	Questa istruzione crea una tabella chiamata \texttt{persona} con tre colonne: la prima si chiama \texttt{nome} e contiene un tipo \texttt{TEXT}, la seconda si chiama \texttt{cognome} e contiene un tipo \texttt{VARCHAR(30)}, infine la terza si chiama \texttt{dataNascita} e contiene un tipo \texttt{DATE}.\\Quando si definisce tabella, è obbligatorio specificare il dominio di ogni colonna e si possono anche inserire dei vincoli che la tabella o i suoi singoli attributi devono rispettare.\\Se la tabella con questo nome esiste già, si incorre in un errore: può essere d'aiuto, quindi, specificare anche la clausola \texttt{IF NOT EXISTS} subito dopo \texttt{CREATE TABLE}:
+	\begin{lstlisting}
+	CREATE TABLE IF NOT EXISTS persona(
+		...
+	)
+	\end{lstlisting}
+	In questo modo, se esiste già una tabella con lo stesso nome, il sistema semplicemente salta questa istruzione.
+	\section{Eliminazione di una tabella}
+	Quando una tabella non è più necessaria, si può rimuovere dal database con il seguente comando:
+	\begin{lstlisting}
+	DROP TABLE persona;
+	\end{lstlisting}
+	Tuttavia, se la tabella non esiste, si incorre in un errore: per questo motivo, può essere d'aiuto specificare la clausola \texttt{IF EXISTS}:
+	\begin{lstlisting}
+	DROP TABLE IF EXISTS persona;
+	\end{lstlisting} 
+	\section{Vincoli}
+	Prima di introdurre la sezione in cui parliamo di come modificare una tabella, è bene conoscere quali vincoli si possono specificare.\\
+	PostgreSQL fornisce una serie di vincoli che permettono di controllare il tipo di dato che viene inserito in una certa colonna, sollevando un errore se questo non dovesse rispettare il vincolo, oppure di specificare che una certa colonna contiene un valore "speciale" per una determinata tabella, ovvero è una chiave primaria, una superchiave, una chiave esterna o una chiave esportata.
+	\subsection{DEFAULT} A una colonna può essere assegnato un valore di default. Questo fa sì che, se una nuova riga viene inserita nella tabella ma non viene specificato il valore per quella colonna, il sistema riempie automaticamente quella colonna con il valore di default.\\
+	Se questo vicolo non viene specificato, invece, alla colonna si assegna \texttt{NULL}. Nel vincolo di default può anche essere inserita una espressione, che verrà valutata nel momento in cui è richiesto di inserire il valore di default.\\
+	Esempio:
+	\begin{lstlisting}
+	CREATE TABLE prodotto(
+		nome TEXT,
+		identificatore CHAR(10),
+		prezzo NUMERIC(4,2) DEFAULT 10.00
+	);
+	\end{lstlisting}
+	Se non viene specificato il prezzo del prodotto, questo viene messo automaticamente a 10.00 .
+	\subsection{CHECK}
+	Un vincolo \texttt{CHECK} permette di definire vincoli molto generici: in particolare, impone che una certa colonna soddisfi l'espressione booleana specificata. Ad esempio:
+	\begin{lstlisting}
+	CREATE TABLE prodotto(
+		nome TEXT,
+		identificatore CHAR(10),
+		prezzo NUMERIC(4,2) CHECK (prezzo > 0)
+	);
+	\end{lstlisting}
+	Nel momento in cui viene inserita una riga nella tabella \texttt{prodotto}, si controlla che il valore nella colonna \texttt{prezzo} sia superiore a 0. Se non soddisfa questa condizione, viene lanciato un errore.\\
+	Possibile definire anche dei \texttt{CHECK} a livello di tabella:
+	\begin{lstlisting}
+	CREATE TABLE prodotto(
+		nome TEXT,
+		identificatore CHAR(10),
+		prezzo NUMERIC(4,2) CHECK (prezzo > 0),
+		prezzoScontato NUMERIC(4,2) CHECK(prezzoScontato > 0),
+		CHECK (prezzo > prezzoScontato)
+	);
+	\end{lstlisting}
+	Si definisce \texttt{CHECK} di tabella un vincolo che riguarda più attributi all'interno della tabella. Questi si specificano \textbf{dopo} aver definito tutti gli attributi.\\
+	Un \texttt{CHECK} di attributo riguarda una condizione su un attributo singolo e viene dichiarato in-line con l'attributo cui si riferisce.
+	\paragraph{}\textit{Osservazione:} in realtà, è possibile specificare i \texttt{CHECK} di attributo e di tabella \textit{ovunque}: i \texttt{CHECK} di tabella possono essere specificati in-line con altri attributi e i \texttt{CHECK} di attributo possono essere specificati in fondo alla definizione. Le convenzioni sopra specificate sono buone pratiche per rendere la specifica più chiara.
+	\subsection{NOT NULL}
+	Il vincolo \texttt{NOT NULL} richiede che l'attributo in questione sia sempre valorizzato.\\Un vincolo di questo tipo \textbf{deve essere scritto in-line con l'attributo cui si riferisce}.
+	\begin{tcolorbox}[enhanced jigsaw, breakable, title=Esempio, title filled]
+	Imponiamo che gli attributi \texttt{nome} e \texttt{identificatore} siano non nulli:
+	\begin{lstlisting}
+	CREATE TABLE prodotto(
+		nome TEXT NOT NULL,
+		identificatore CHAR(10) NOT NULL,
+		prezzo NUMERIC(4,2) CHECK (prezzo > 0),
+		prezzoScontato NUMERIC(4,2) CHECK(prezzoScontato > 0),
+		CHECK (prezzo > prezzoScontato)
+	);
+	\end{lstlisting}
+	\end{tcolorbox}
+	Questo vincolo è semanticamente equivalente a scrivere \texttt{CHECK(attributo IS NOT NULL)}, ma in PostgreSQL specificare un vincolo \texttt{NOT NULL} è più efficiente.\\Se si vuole aggiungere una nuova colonna a una tabella già esistente e si impone il vincolo \texttt{NOT NULL}, è bene specificare anche un valore di default: normalmente, infatti, quando si aggiunge una nuova colonna il sistema la riempie inizialmente con \texttt{NULL}, ma se si specifica \texttt{NOT NULL} bisogna anche fornire il valore con cui riempire le colonne!
+	\subsection{UNIQUE}
+	Vincolo usato per specificare \textit{superchiavi}. Definire un vincolo \texttt{UNIQUE} per un attributo (o un insieme di attributi), assicura che il valore presente in quell'attributo (o insieme di attributi) sia unico all'interno della tabella. \textbf{Non deve essere utilizzato per definire chiavi primarie}, per le quali esiste una keyword apposita.\\
+	\begin{tcolorbox}[enhanced jigsaw, breakable, title=Esempio, 
+		title filled]
+	Imponiamo che il nome del prodotto sia unico all'interno della tabella:
+	\begin{lstlisting}
+	CREATE TABLE prodotto(
+		nome TEXT UNIQUE,
+		identificatore CHAR(10) NOT NULL,
+		prezzo NUMERIC(4,2) CHECK (prezzo > 0),
+		prezzoScontato NUMERIC(4,2) CHECK(prezzoScontato > 0),
+		CHECK (prezzo > prezzoScontato)
+	);
+	\end{lstlisting}
+	\end{tcolorbox}
+	La seguente scrittura è del tutto equivalente:
+	\begin{lstlisting}
+	CREATE TABLE prodotto(
+		nome TEXT NOT NULL,
+		identificatore CHAR(10) NOT NULL,
+		prezzo NUMERIC(4,2) CHECK (prezzo > 0),
+		prezzoScontato NUMERIC(4,2) CHECK(prezzoScontato > 0),
+		CHECK (prezzo > prezzoScontato),
+		UNIQUE(nome)
+	);
+	\end{lstlisting}
+	Aggiungere un vincolo \texttt{UNIQUE} comporta la creazione automatica di un indice B-tree sulla colonna (o gruppo di colonne) specificate nel vincolo.
+	\paragraph{}\textit{Osservazione:} Se due righe della tabella presentano il valore \texttt{NULL} nella colonna soggetta a un vincolo \texttt{UNIQUE}, \textbf{il vincolo di unicità non è violato}, perchè in SQL due \texttt{NULL} sono sempre diversi tra loro! (si veda l'approfondimento sui valori \texttt{NULL} nella sezione 2.3).\\Quindi, un attributo con vincolo \texttt{UNIQUE} può anche essere nullo, a differenza di un attributo con vincolo \texttt{PRIMARY KEY}.
+	\subsection{PRIMARY KEY}
+	È un vincolo utilizzato per denotare la \textit{chiave primaria} di una tabella, ovvero quell'attributo che identifica una riga all'interno della base di dati.\\
+	Alcune caratteristiche importanti:	
+	\begin{itemize}
+		\item si può usare \textbf{una sola volta} all'interno di una tabella
+		\item definire un vincolo \texttt{PRIMARY KEY} \textbf{implica} un vincolo \texttt{NOT NULL}
+		\item può essere specificato su un solo attributo o su una n-upla di attributi
+	\end{itemize}
+	Aggiungere un vincolo \texttt{PRIMARY KEY} comporta la creazione automatica di un indice B-tree sulla colonna (o gruppo di colonne) specificate nel vincolo.
+	\begin{tcolorbox}[enhanced jigsaw, breakable,title=Esempio, title filled]
+	Dichiariamo l'attributo \texttt{identificatore} come chiave primaria per la tabella \texttt{prodotto}. Il vincolo \texttt{NOT NULL}, quindi, non è più necessario.
+	\begin{lstlisting}
+	CREATE TABLE prodotto(
+		nome TEXT NOT NULL,
+		identificatore CHAR(10) PRIMARY KEY,
+		prezzo NUMERIC(4,2) CHECK (prezzo > 0),
+		prezzoScontato NUMERIC(4,2) CHECK(prezzoScontato > 0),
+		CHECK (prezzo > prezzoScontato),
+		UNIQUE(nome)
+	);
+	\end{lstlisting}
+	\end{tcolorbox}
+	\begin{tcolorbox}[enhanced jigsaw, breakable, title=Attenzione, colframe=red!70!black]
+	A livello teorico, il modello relazionale \textbf{impone} che ogni tabella abbia una chiave primaria associata. Tuttavia, nell'implementazione di PostgreSQL questo regola non è obbligatoria, quindi creare una tabella che non abbia una chiave primaria è accettato (ovvero, non viene dato errore), anche se fortemente sconsigliato.
+	\end{tcolorbox}
+	\subsection{Chiavi esportate}
+	Una chiave esportata è una colonna (o un gruppo di colonne) il cui valore deve comparire anche in una certa colonna (o un gruppo di colonne) di un'altra tabella.\\
+	In PostgreSQL ci sono due modi per specificare la chiave esportata di una tabella:
+	\begin{itemize}
+		\item \texttt{attribute TYPE \textcolor{crimson}{REFERENCES anotherTable(anotherAttribute)}}\\Questo è un \textbf{vincolo di attributo} e si utilizza quando la chiave esportata è composta da una singola colonna.
+		\item \texttt{\textcolor{crimson}{FOREIGN KEY(a_1, ..., a_n) REFERENCES anotherTable(b_1,...,b_n)}}\\
+		Questo è un \textbf{vincolo di tabella}, si usa quando il vincolo di integrità referenziale coinvolge più attributi.\\\texttt{a_1,...,a_n} = chiave \textbf{esportata}\\ \texttt{b_1,...,b_n} = chiave \textbf{esterna} 
+	\end{itemize}
+	\paragraph{}\textit{Osservazione:} quando si specifica una chiave esportata, è possibile omettere gli attributi della chiave esterna: il sistema assume che gli attributi a cui ci si riferisce sono quelli che compongono la chiave primaria della tabella esterna.\\
+	\begin{tcolorbox}[enhanced jigsaw, breakable, title=Attenzione, colframe=red!70!black]
+	Quando la tabella A referenzia la tabella B, bisogna assicurarsi che la tabella B sia già stata dichiarata, altrimenti si incorre in un errore!
+	\end{tcolorbox}
+	Anche in questo caso, la sintassi per specificare una chiave esportata è abbastanza flessibile: nonostante venga considerata buona pratica adottare il formato presentato sopra, quando la chiave esportata è composta da un singolo attributo non è necessario specificarlo in-line!
+	Si può anche scrivere:
+	\begin{lstlisting}
+	CREATE TABLE thisTable(
+		...
+		FOREIGN KEY(a) REFERENCES anotherTable
+	);
+	\end{lstlisting}
+	ovvero si può utilizzare la sintassi della chiave esterna multiattributo.
+	\section{Modificare la struttura di una tabella}
+	È possibile modificare la struttura di una tabella in molti modi diversi. Le azioni concesse sono:
+	\begin{itemize}
+		\item aggiungere, modificare, rimuovere colonne
+		\item aggiungere, modificare, rimuovere vincoli
+		\item modificare i valori di default
+		\item modificare il dominio di una colonna
+		\item rinominare colonne
+		\item rinominare tabelle
+	\end{itemize}
+	Tutti i comandi che effettuano modifiche di questo tipo sono introdotte dalla keyword \textcolor{blue}{\texttt{ALTER TABLE}}.
+	\subsection{Aggiungere, modificare, rimuovere colonne}
+	L'istruzione che permette di modificare una colonna a una tabella già esistente è:
+	\begin{lstlisting}
+	ALTER TABLE table_name
+	[ADD [COLUMN] <column_name> <domain> [<constraints>] ]
+	[DROP [COLUMN] <column_name> [CASCADE]]
+	[ALTER [COLUMN] <column_name> ...]
+	\end{lstlisting}
+	Cominciamo dalla keyword \textcolor{blue}{\texttt{ADD COLUMN}}, che permette di aggiungere una nuova colonna alla tabella: quando si aggiunge una nuova colonna, è necessario specificare almeno il nome e il dominio, mentre l'aggiunta di vincoli è opzionale e può comunque essere effettuata in seguito.\\
+	Se non viene specificato un valore di default, la colonna viene riempita con \texttt{NULL}.
+	\paragraph{}\textit{Osservazione}: a partire da PostgreSQL 11, l'aggiunta di una colonna non comporta l'aggiornamento immediato di tutte le righe della tabella al momento dell'esecuzione di \texttt{ALTER TABLE}. Invece, il valore di default viene ritornato la prima volta che si accede alla riga dopo la modifica e verrà effettivamente memorizzato quando la tabella verrà riscritta. Questo comporta un notevole vantaggio in termini di efficienza. L'unica eccezione vale per i valori di default "volatili", ovvero quei valori che cambiano a seconda dell'istante in cui sono creati (es. \texttt{clock_timestamp()}.)
+	\paragraph{}L'eliminazione di una colonna è leggermente più complicata nel caso in cui ci siano altre colonne che dipendono da essa (ad esempio, la colonna è una chiave esterna o esportata). In questo caso, bisogna unire all'istruzione di \texttt{DROP} anche la clausola \textcolor{blue}{\texttt{CASCADE}}, che comporta l'eliminazione a cascata di tutti gli elementi o vincoli del database che dipendono da quello che si vuole rimuovere.
+	\paragraph{}Una colonna può essere rinominata tramite la seguente istruzione
+	\begin{lstlisting}
+	ALTER TABLE [ IF EXISTS ] <table_name> 
+	RENAME [ COLUMN ] <column_name> TO <new_column_name>
+	\end{lstlisting}
+	È possibile anche modificare il dominio di una colonna, ma non sempre è possibile. Per essere precisi, modificare il dominio di una colonna richiede di fare un cast di tutti i valori contenuti nella colonna stessa: è sicuramente possibile convertire, ad esempio, un tipo \texttt{DATE} a \texttt{TEXT}, ma non posso di certo convertire un tipo \texttt{DATE} a \texttt{SMALLINT} o viceversa!\\
+	Per modificare il dominio di una colonna, si scrive:
+	\begin{lstlisting}
+	ALTER TABLE <table_name> ALTER COLUMN <column_name> TYPE <new_type>
+	\end{lstlisting}
+	Se la conversione non è possibile, viene tornato un errore.\\A volte è possibile cercare di "forzare" il cast aggiugendo la clausola \texttt{USING}:
+	\begin{lstlisting}
+	ALTER TABLE <table_name> ALTER COLUMN <column_name> TYPE <new_type> USING <old_type>::<new_type>
+	\end{lstlisting}
+	ma non sempre questo funziona: riprendendo lo stesso esempio di prima, in nessun caso è possibile convertire un \texttt{DATE} a \texttt{SMALLINT}, nemmeno attraverso un cast forzato.
+	\subsection{Aggiungere, modificare, rimuovere vincoli}
+	PostgreSQL permette di aggiungere, modificare e rimuovere vincoli anche dopo la creazione della tabella. Tuttavia, bisogna tenere a mente che, mentre i vincoli di tabella sono sempre alterabili, \textbf{non sempre è possibile modificare i vincoli di una attributo!}\\La sintassi generica per aggiugnere, eliminare o modificare un vincolo (di colonna o di tabella) è la seguente:
+	\begin{lstlisting}
+	ALTER TABLE <table_name> [ADD | DROP | ALTER] <constraint>
+	\end{lstlisting}
+	\begin{tcolorbox}[enhanced jigsaw, breakable,title=Esempio, title filled]
+	Aggiungo alla tabella \texttt{test} i seguenti vincoli:
+	\begin{lstlisting}
+	ALTER TABLE test ADD PRIMARY KEY(id);
+	ALTER TABLE test ADD CONSTRAINT "unique_name_value" UNIQUE(name, value);
+	ALTER TABLE test ALTER COLUMN duration SET NOT NULL;
+	ALTER TABLE test ALTER COLUMN name SET DEFAULT 'unknown';
+	\end{lstlisting}
+	\end{tcolorbox}
+	Si noti che:
+	\begin{itemize}
+		\item la sintassi che permette di aggiungere vincoli di colonna è identica a quella per aggiungere vincoli di tabella (a eccezione di \texttt{NOT NULL} e \texttt{DEFAULT}, si veda il terzo punto)
+		\item è possibile assegnare un nome ai vincoli, ma bisogna aggiugnere la keyword \textcolor{blue}{\texttt{CONSTRAINT}} (questo torna utile se in seguito si vuole poter alterare o eliminare quel vincolo)
+		\item gli unici vincoli di colonna che richiedono una sintassi "speciale" sono \texttt{NOT NULL} e \texttt{DEFAULT}. Più precisamente, il comando corretto per impostare questi vincoli è:
+	\begin{lstlisting}
+	ALTER TABLE <table_name>
+	ALTER COLUMN <column_name> [SET | DROP] [NOT NULL | DEFAULT] [<default_value>];
+	\end{lstlisting}
+	\end{itemize}
+	\paragraph{}Assegnare un identificativo a un vincolo è necessario per poterlo eliminare o modificare in seguito:
+	\begin{lstlisting}
+	ALTER TABLE test ADD CONSTRAINT "unique_name_value" UNIQUE(name, value);
+	...
+	ALTER TABLE test DROP CONSTRAINT "unique_name_value";
+	\end{lstlisting}
+	Questo nome può essere successivamente modificato tramite la seguente istruzione:
+	\begin{lstlisting}
+	ALTER TABLE [ IF EXISTS ] <table_name>
+	RENAME CONSTRAINT <constraint_name> TO <new_constraint_name>
+	\end{lstlisting}
+	\subsection{Rinominare tabelle}
+	Rinominare una tabella è sempre possibile, a patto che nel database non esista già una tabella con lo stesso nome. Per effettuare questa operazione, si può eseguire il seguente comando:
+	\begin{lstlisting}
+	ALTER TABLE [ IF EXISTS ] <table_name>
+	RENAME TO <new_table_name>
+	\end{lstlisting}
+	\subsection{Rinominare colonne}
+	Con una sintassi simile a quella vista nella sezione precedente, è possibile riassegnare il nome a una certa colonna attraverso il seguente comando:
+	\begin{lstlisting}
+	ALTER TABLE test RENAME [ COLUMN ] <column_name> TO <new_column_name>;
+	\end{lstlisting}
+	\section{Domini}
+	L'implementazione di PostgreSQL mette a disposizione svariati tipi di dati. I principali sono:
+	\begin{itemize}
+		\item tipi numerici
+		\item tipi booleani
+		\item tipi carattere/stringa
+		\item tipi temporali
+	\end{itemize}
+	\subsection{Tipi numerici}
+	PostgreSQL fornisce diversi tipi per rappresentare quantità numeriche intere o decimali.\\
+	I tipi \textcolor{blue}{\texttt{SMALLINT, INTEGER, BIGINT}} sono utilizzati per memorizzare numeri interi, quindi numeri privi di parte decimale. La differenza tra questi tre tipi sta nel range di valori che possono rappresentare:\vspace{10px}\\
+	% ridefinisco lo spazio tra righe
+	\renewcommand{\arraystretch}{1.5}
+	\begin{tabular}{| l | l | l |}
+		\hline
+		Tipo & Spazio in memoria & Range\\
+		\hline
+		\texttt{smallint} & 2 byte & [-32768, +32767]\\
+		\texttt{integer} & 4 byte & [$-2^{31}$, $+2^{31}-1$]\\
+		\texttt{bigint} & 8 byte & [$-2^{63}$, $+2^{63}-1$]\\
+		\hline
+	\end{tabular}\vspace{10px}
+	\paragraph{}I tipi \textcolor{blue}{\texttt{NUMERIC, DECIMAL, REAL, DOUBLE PRECISION}} sono invece usati per rappresentare valori decimali.\vspace{10px}\\
+	\begin{tabular}{| l | l | l |}
+		\hline
+		Tipo & Spazio in memoria & Range\\
+		\hline
+		\texttt{decimal} & variabile & fino a 131072 cifre prima della virgola, fino\\ & & a 16383 cifre dopo la virgola\\
+		\texttt{numeric} & variabile & come \texttt{decimal} \\
+		\texttt{real} & 4 byte & 6 cifre decimali dopo la virgola\\
+		\texttt{double precision} & 8 byte & 15 cifre decimali dopo la virgola\\
+		\hline
+	\end{tabular}\vspace{10px}\\
+	\texttt{NUMERIC} e \texttt{DECIMAL} \textbf{sono sinonimi e vanno utilizzati quando si vogliono rappresentare quantità numeriche esatte}, robuste rispetto a errori di approssimazione che possono incorrere sia nel momento della memorizzazione, sia durante manipolazioni aritmetiche.\\
+	Per dichiarare un tipo \texttt{numeric} (o \texttt{decimal}) si usa la seguente sintassi:
+	\begin{lstlisting}
+	NUMERIC(precision, scale)
+	\end{lstlisting}
+	dove \texttt{precision} rappresenta il numero totale di cifre presenti nel numero (quindi sia prima che dopo la virgola), mentre \texttt{scale} indica il numero di cifre presenti dopo la virgola.
+	\begin{tcolorbox}[enhanced jigsaw, breakable,title=Esempio, title filled]
+		Il numero 924.12 è di tipo \texttt{NUMERIC(5,2)}.
+	\end{tcolorbox}
+	Altre sintassi accettate sono:
+	\begin{lstlisting}
+	NUMERIC(precision)
+	\end{lstlisting}
+	se \texttt{scale} è 0 quindi se il numero da rappresentare \textbf{non} ha parte decimale. \\È comunque possibile inserire un numero decimale, ma le cifre della parte intera devono essere \textit{al massimo} \texttt{precision} e il numero verrà memorizzato come intero, quindi senza parte decimale. Se il numero di cifre della parte intera supera quello dichiarato da \texttt{precision}, si incorre in un errore di questo tipo:
+	\begin{lstlisting}
+	ERROR:  numeric field overflow
+	\end{lstlisting}
+	Infine, la seguente sintassi
+	\begin{lstlisting}
+	NUMERIC
+	\end{lstlisting}
+	si usa per indicare un valore che può avere qualunque valore per \texttt{scale} e \texttt{precision}.\\
+	Il vantaggio dell'ultima notazione è che viene scongiurato l'unico caso in cui un tipo \texttt{numeric} può essere approssimato, ovvero il caso in cui il numero di cifre dopo la virgola supera quello dichiarato come \texttt{scale}.\\ 
+	\begin{tcolorbox}[enhanced jigsaw, breakable,title=Esempio, title filled]
+		Se tento di memorizzare il numero 100.999 in una colonna di tipo \texttt{NUMERIC(5,2)}, questo viene arrotondato a 101.00, perchè il numero di cifre dopo la virgola nel numero originale è 3, mentre la colonna può memorizzare solo un massimo di 2 cifre decimali!\\
+		Se invece tento di memorizzare 1000.01, viene restituito un errore, perché la parte intera dovrebbe contenere 3 cifre. Quindi c'è "flessibilità" (con approssimazione) nel numero di cifre della parte decimale, mentre \textbf{non} c'è flessibilità nel numero di cifre della parte intera.\\
+		Nel caso in cui il numero di cifre del numero che vogliamo rappresentare sia inferiore a quello specificato in \texttt{precision}, il numero viene memorizzato fisicamente \textbf{senza l'aggiunta di zeri} (\textit{zero-padding}). Questo significa che \texttt{precision} e \texttt{scale} \textbf{sono solo un limite superiore}!
+	\end{tcolorbox}
+	In aggiunta ai consueti valori numerici, il tipo \texttt{NUMERIC} consente anche il valore speciale \textcolor{blue}{\texttt{NaN}}, il cui significato è \texttt{Not-A-Number}.\\Qualunque operazione aritmetica che usi il valore \texttt{NaN} risulta in un \texttt{NaN}. Se si vuole assegnare questo valore a una colonna di tipo \texttt{NUMERIC}, si usa la seguente sintassi:
+	\begin{lstlisting}
+	UPDATE <table_name> SET <column_name> = 'NaN';
+	\end{lstlisting}
+	\textbf{Si noti che \texttt{NaN} è specificato tra singoli apici, come se fosse una stringa!}
+	\begin{tcolorbox}[enhanced jigsaw, breakable, title=Attenzione, colframe=red!70!black]
+	La maggior parte delle volte che un sistema deve implementare \texttt{NaN}, si considera questo valore come diverso da qualunque altro valore \texttt{NaN} (esattamente come con \texttt{NULL}).
+	Tuttavia, per permettere l'ordinamento di valori \texttt{NUMERIC} in indici B-tree, \textbf{PostgreSQL tratta i valori \texttt{NaN} come uguali tra loro e maggiori di qualunque altro valore diverso da \texttt{NaN}.}
+	\end{tcolorbox}
+	\paragraph{}I tipi \textcolor{blue}{\texttt{REAL}, \texttt{DOUBLE PRECISION}} rappresentano valori in virgola mobile e sono implementati secondo lo standard IEEE Standard 754 for Binary Floating-Point Arithmetic.\\Questi tipi \textbf{non dovrebbero essere utilizzati se si vuole avere la garanzia di una rappresentazione esatta, priva di errori di approssimazione}. \\
+	Un tipico errore di approssimazione si ottiene quando si tenta di rappresentare un valore troppo vicino a zero. In questo caso si incorre in un underflow aritmetico.
+	\paragraph{I tipi serial} Oltre ai tipi appena visti, esistono anche i \textcolor{blue}{\texttt{SMALLSERIAL, SERIAL, BIGSERIAL}}: questi \textit{non sono veri e propri tipi}, ma costituiscono piuttosto una notazione per creare un identificatore univoco su una colonna (simile alla proprietà \textcolor{blue}{\texttt{AUTO_INCREMENT}} supportata da alcuni database).
+	La seguente istruzione:
+	\begin{lstlisting}
+	CREATE TABLE <table_name>(
+		<column_name> SERIAL,
+		...
+	)
+	\end{lstlisting}
+	crea una tabella in cui \texttt{<column_name>} contiene \textit{valori interi}, i cui valori di default sono generati tramite un generatore di sequenza. In altre parole, la colonna dichiarata di tipo \texttt{SERIAL} costituisce un identificatore (chiave primaria o superchiave); se quando si inserisce una nuova riga non si specifica un valore per quella colonna, il sistema genera automaticamente un nuovo valore, che risulta essere il successore di quello precedentemente generato.\\
+	\begin{tcolorbox}[enhanced jigsaw, breakable, title=Esempio, title filled]
+		Si consideri la tabella \texttt{test_serial} generata dalla seguente istruzione:
+		\begin{lstlisting}
+		CREATE TABLE test_serial(
+			x SERIAL,
+			y VARCHAR(20),
+			z NUMERIC(5,2)
+		);
+		\end{lstlisting}
+		Posso effettuare degli inserimenti senza specificare il valore per \texttt{x}:
+		\begin{lstlisting}
+		INSERT INTO test_serial(y, z) VALUES('hello', 5.2), ('world', 12.9375), ('joy', 9.12);
+		\end{lstlisting}
+		ottenendo le seguenti righe:
+		\begin{lstlisting}
+		x  |    y    |  z
+		---------------------
+		1  |  hello  |  5.2
+		2  |  world  | 12.94
+		3  |   joy   | 9.12
+		\end{lstlisting}
+	\end{tcolorbox}
+	Può essere utile specificare comunque un vincolo \texttt{UNIQUE} o \texttt{PRIMARY KEY} per evitare che valori duplicati siano inseriti per errore. \\Ad esempio, in riferimento all'esempio appena fatto, si potrebbe inserire una riga specificando un valore \texttt{x} pari a 6. Se poi si inseriscono altre righe facendo generare automaticamente i valori per \texttt{x}, il sistema calcola il valore successivo a partire dall'\textit{ultimo valore automaticamente generato}, in questo caso 3. Inserendo altre 3 righe, verrebbero generati per \texttt{x} i valori 4, 5 e 6, senza incorrere in alcun errore a causa del valore duplicato.
+	\subsection{Tipi booleani}
+	Un valore booleano è identificato dalla keyword \textcolor{blue}{\texttt{BOOLEAN}} oppure, in modo equivalente, \textcolor{blue}{\texttt{BOOL}}.\\ Può avere tre stati possibili: \texttt{true, false} oppure \texttt{null}, che è il modo in cui SQL rappresenta uno stato "sconosciuto".\\
+	Esistono vari modi per rappresentare questi stati:
+	\begin{itemize}
+		\item lo stato \textcolor{dkgreen}{\texttt{vero}} può essere codificato dalla \textit{keyword} \texttt{true}, oppure dalle seguenti \textit{stringhe}: \texttt{'true', 't', 'yes', 'on', '1'}
+		\item lo stato \textcolor{crimson}{\texttt{falso}} può essere codificato dalla \textit{keyword} \texttt{false}, oppure dalle seguenti \textit{stringhe}: \texttt{'false', 'f', 'no', 'off', '0'}
+	\end{itemize}
+	Per evitare ambiguità, si consiglia di usare le keyword \texttt{true} e \texttt{false}, ma le stringhe sopra elencate vengono comunque riconosciute e, se immesse in una colonna di tipo \texttt{BOOLEAN}, vengono interpretate nel loro valore booleano.
+	\paragraph{}\textit{Osservazione:} benché sia possibile inserire diverse stringhe, una colonna di tipo boolean conterrà sempre o il valore \texttt{true}, o il valore \texttt{false} (oppure \texttt{null}). Quindi il sistema \textit{interpreta} la stringa e poi memorizza il corrispondente valore booleano.\\ 
+	\begin{tcolorbox}[enhanced jigsaw, breakable, title=Esempio, title filled]
+	Si consideri il seguente codice SQL:
+	\begin{lstlisting}
+	CREATE TABLE test(
+		boolval BOOL
+	);
+		
+	INSERT INTO test VALUES (true), ('1'), ('f'), (false), ('true'), ('off'), ('yes');
+		
+	SELECT * FROM test;
+	\end{lstlisting}
+	Restituirà il seguente risultato:\vspace{10px}\\
+	\texttt{boolval\\----------------\\true\\true\\false\\false\\true\\false\\true}\vspace{10px}\\
+	\end{tcolorbox}
+	Si tenga presente che il valore \texttt{null} non ha di per sé un tipo, indipendentemente dal tipo della colonna in cui viene memorizzato.
+	\paragraph{Espressioni booleane con valori nulli} È necessario fare alcune precisazioni in merito alla valutazione di un'espressione booleana in presenza di valori nulli.\\
+	PostgreSQL adotta una strategia \textit{lazy} per la valutazione dell'espressione (anche detta valutazione \textit{short-circuit}), quindi restituisce il risultato non appena incontra un valore che assicura un certo esito di valutazione.\\Ad esempio, la seguente espressione
+	\begin{lstlisting}
+	true or false
+	\end{lstlisting}
+	restituisce \texttt{true} se almeno uno dei due operandi è \texttt{true}. Dato che il valore \texttt{true} si trova in prima posizione, il sistema non valuta l'espressione completa (ovvero, non arriva a valutare anche \texttt{false}) perché avere un solo valore \texttt{true} è già sufficiente per decidere il valore di verità dell'espressione complessiva.\\
+	L'unico caso in cui una sequenza di espressioni in \texttt{or} resituisce \texttt{true} è quando \textit{almeno un} valore viene valutato \texttt{true}.
+	\begin{lstlisting}
+	true or null or null
+	\end{lstlisting}
+	Se pensiamo che \texttt{null} in SQL rappresenta un valore "sconosciuto", questo esito ha senso dal punto di vista logico: non importa se non conosciamo il valore delle altre espressioni, perché avere un singolo valore \texttt{true} è sufficiente per restituire con sicurezza l'esito \texttt{true}.\\
+	Se invece la disgiunzione di espressioni contiene solo \texttt{false} e \texttt{null}, \textbf{il valore di verità dell'espressione complessiva sarà sempre} \texttt{null}.\vspace{10px}\\
+	% aumento lo spazio tra colonne
+	\setlength{\tabcolsep}{30pt}
+	\begin{tabular}{l l}
+	\begin{lstlisting}
+	false or null or false
+	\end{lstlisting} & viene valutata \texttt{null}\\
+	\begin{lstlisting}
+	null or null 
+	\end{lstlisting} & viene valutata \texttt{null}\\
+	\end{tabular}\vspace{10px}\\
+	Anche questo ha senso dal punto di vista logico: se gli unici valori che riusciamo a valutare restituiscono \texttt{false}, non abbiamo elementi sufficienti per stabilire il valore di verità della disgiunzione: \texttt{null} potrebbe essere \texttt{true} oppure \texttt{false}, ma non lo sappiamo! Quindi siamo costretti a valutare l'espressione a \texttt{null}, perché non ci sono elementi sufficienti per determinare un qualsiasi altro valore di verità. 
+	\paragraph{}Diverso è il caso delle espressioni in \texttt{and}. Si adotta sempre una valutazione \textit{lazy}, ma se si incontra anche solo un valore \texttt{null} durante la valutazione, il risultato complessivo dell'espressione sarà \texttt{null}. Ad esempio:
+	\begin{lstlisting}
+	true and null and true
+	\end{lstlisting}
+	restituisce \texttt{null}.\\In presenza di un valore \texttt{null}, è sufficiente valutare almeno una espressione come \texttt{false} per rendere il risultato complessivo \texttt{false}:\vspace{10px}\\
+	\begin{tabular}{l l}
+		\begin{lstlisting}
+		false and null
+		\end{lstlisting} & viene valutata \texttt{false}\\
+		\begin{lstlisting}
+		null and false
+		\end{lstlisting} & viene valutata \texttt{false}\\
+	\end{tabular}\vspace{10px}\\
+	perché avere un singolo valore \texttt{false} in un'espressione in \texttt{and} è sufficiente per affermare che, indipendentemente dal valore che potrebbero rappresentare i \texttt{null}, l'espressione risulterà sempre e comunque falsa.
+	\subsection{Tipi carattere/stringa}
+	Di seguito riportiamo la sintassi accettata da PostgreSQL per la dichiarazione di tipi testuali:\vspace{10px}\\
+	% diminuisco lo spazio tra colonne
+	\setlength{\tabcolsep}{10pt}
+	\begin{tabular} {| l | l |}
+		\hline
+		Tipo & Descrizione\\
+		\hline
+		\texttt{char, character} & carattere singolo\\
+		\texttt{varchar(n), character varying(n)} & lunghezza variabile, con \texttt{n} limite massimo\\
+		\texttt{char(n), character(n)} 	& lunghezza fissa, blank-padded	\\
+		\texttt{text} & lunghezza illimitata e variabile\\
+		\hline
+	\end{tabular}\vspace{10px}\\
+	Il tipo \textcolor{blue}{\texttt{CHAR}} contiene semplicemente un carattere singolo, racchiuso tra singoli apici. Ad esempio, \texttt{'a'} può essere memorizzato come tipo \texttt{char}.\\ \\
+	Il tipo \textcolor{blue}{\texttt{CHAR(n)}}, sinonimo di \textcolor{blue}{\texttt{CHARACTER(n)}}, rappresenta una stringa lunghezza fissa, specificata dal paramentro \texttt{n}.\\
+	Se la lunghezza della stringa è m < n, viene effettuato il cosiddetto \textit{"blank-padding"}, ovvero si riempiono i caratteri vuoti con degli spazi, fino a raggiungere la lunghezza \texttt{n}: questo perché il tipo \texttt{CHAR(n)} deve \textit{garantire} che verranno memorizzati esattamente n caratteri.\\Se si calcola la lunghezza della stringa, però, vengono contati \textbf{solo i caratteri significativi}, ovvero quelli che non sono spazi.\\
+	\begin{tcolorbox}[enhanced jigsaw, breakable, title=Esempio, title filled]
+	Si consideri il seguente codice:
+	\begin{lstlisting}
+	CREATE TABLE test (
+		a CHAR(8)
+	);
+		
+	INSERT INTO test VALUES ('ok                   ');
+	
+	SELECT a, char_length(a) 
+	FROM test;
+	\end{lstlisting}
+	(Si supponga che nell'istruzione \texttt{INSERT} siano stati specificati 20 spazi vuoti).\\
+	Il risultato della \texttt{SELECT} sarà:\vspace{10px}\\
+	\texttt{a$\quad$| char_length\\   -------------------------------\\ok  |$\quad\quad$2 }
+	\end{tcolorbox}
+	Se la lunghezza della stringa è m > n, ma i caratteri in eccesso sono spazi vuoti, la stringa viene troncata a \texttt{n} caratteri.\\
+	Se la lunghezza della stringa è m > n e i caratteri in eccesso sono significativi (ovvero, non sono spazi vuoti), viene sollevato un errore.\\ \\
+	Il tipo \textcolor{blue}{\texttt{VARCHAR(n)}}, sinonimo di \textcolor{blue}{\texttt{CHARACTER VARYING(n)}}, può memorizzare una stringa di lunghezza variabile, con un massimo di n caratteri.\\
+	Se la lunghezza della stringa è m < n, si memorizzano solamente m caratteri, con un conseguente risparmio di memoria.\\
+	Se la lunghezza della stringa è m > n e i caratteri in eccesso sono significativi, viene sollevato un errore.\\
+	Se la lunghezza della stringa è m > n e i caratteri in eccesso \textbf{non sono significativi} (quindi sono spazi bianchi), vengono memorizzati solo n caratteri.\\
+	Se una stringa di lunghezza m > n viene esplicitamente convertita (tramite cast, \texttt{::}) in un \texttt{varchar(n)} o in un \texttt{char(n)}, essa viene semplicemente troncata a n caratteri, senza sollevamento di errori! 
+	\begin{tcolorbox}[enhanced jigsaw, breakable, title=Approfondimento: blank characters, title filled]
+	I \textit{blanks} (caratteri non significativi) vengono trattati in modo diverso a seconda del tipo della stringa in cui compaiono.\\
+	\textbf{Il tipo \texttt{CHAR(n)} tiene conto solo dei caratteri significativi}, ignorando quindi ogni spazio bianco nel momento in cui deve valutare una stringa. Infatti, il seguente comando
+	\begin{lstlisting}
+	SELECT 'OK    '::CHAR(6) = 'OK'::CHAR(6)
+	\end{lstlisting}
+	restituisce \textcolor{dkgreen}{\texttt{true}}, perché si confrontano tra loro solo i caratteri significativi.\\Se proviamo a calcolare la lunghezza della stringa:
+	\begin{lstlisting}
+	SELECT char_length('OK    '::CHAR(6))
+	\end{lstlisting}
+	il risultato sarà 2.\\ \\
+	Il tipo \texttt{VARCHAR(n)}, invece, considera significativi anche gli  spazi vuoti. A dimostrazione di ciò, si può facilmente verificare che il seguente comando: 
+	\begin{lstlisting}
+	SELECT 'OK     '::VARCHAR(5) = 'OK     '::VARCHAR(3)
+	\end{lstlisting}
+	restituisce \textcolor{crimson}{\texttt{false}}.\\L'ultimo caso che presentiamo è il seguente:
+	\begin{lstlisting}
+	SELECT 'OK    '::CHAR(3) = 'OK   '::VARCHAR(5)
+	\end{lstlisting}
+	che restituisce \textcolor{dkgreen}{\texttt{true}}. Il motivo è che \textbf{in nessun caso è possibile fare confronti tra valori di tipi diversi}. Di conseguenza, anche se è stato fatto un cast per entrambe le stringhe, il sistema deve decidere di convertire una delle due stringhe al tipo dell'altra per poter decidere l'uguaglianza. In questo, il sistema ha probabilmente convertito la seconda stringa da \texttt{VARCHAR(5)} a \texttt{CHAR(3)} e ha considerato solo i caratteri significativi per il confronto.\\Non c'è però una regola generale per decidere come effettuare le conversioni, dipende dalla situazione. 
+	\end{tcolorbox}
+	\subsection{Tipi temporali}
+	I tipi temporali permettono di rappresentare date, istanti e intervalli di tempo.\vspace{10px}\\
+	% diminuisco lo spazio tra colonne
+	\setlength{\tabcolsep}{5pt}
+	% ridefinisco lo spazio tra righe
+	\renewcommand{\arraystretch}{2.0}
+	\begin{tabular}{| l | l | l | l |}
+		\hline
+		Nome & \makecell{Spazio in\\ memoria} & Descrizione & Risoluzione\\
+		\hline
+		\texttt{date} & 4 byte & data senza specificazione dell'ora & 1 giorno \\
+		\texttt{time} & 8 byte & ora del giorno, senza data& 1 microsecondo\\
+		\makecell[l]{\texttt{time with}\\ \texttt{timezone}} & 12 byte & ora del giorno, senza data, con time zone & 1 microsecondo \\
+		\texttt{timestamp} & 8 byte & data e ora & 1 microsecondo\\
+		\makecell[l]{\texttt{timestamp with}\\ \texttt{time zone}} & 8 byte & data e ora con time zone & 1 microsecondo\\
+		\texttt{interval} & 16 byte & intervallo di tempo tra due tipi \texttt{time} & 1 microsecondo \\
+		\hline
+	\end{tabular}\vspace{10px}\\
+	% ridefinisco lo spazio tra righe
+	\renewcommand{\arraystretch}{2.0}	
+	I tipi \textcolor{blue}{\texttt{time, timestamp}} e \textcolor{blue}{\texttt{interval}} possono accettare un parametro di precisione, \texttt{(p)}, che specifica il numero di cifre che si voglio memorizzare nei secondi. Il range di valori che può assumere \texttt{p} è [0,6]. Se non si specifica alcuna precisione, questa viene impostata di default alla precisione dell'input, ma comunque non può andare oltre i microsecondi.\\
+	\paragraph{}Il tipo \textcolor{blue}{\texttt{interval}} contiene di default i seguenti campi: \texttt{YEAR, MONTH, DAY, HOUR, MINUTE, SECOND}. È possibile tuttavia limitare il numero di campi rappresentati e la precisione dei secondi specificando due parametri aggiuntivi:
+	\begin{itemize}
+		\item \textcolor{blue}{\texttt{fields}}, in cui si specificano tutti e soli i campi che si vogliono memorizzare nel risultato (sulla documentazione viene descritta la sintassi accettata per il paramentro \texttt{fields}\footnote{https://www.postgresql.org/docs/12/datatype-datetime.html})
+		\item \textcolor{blue}{\texttt{(p)}}, in cui si specifica la precisione desiderata per i secondi. La precisione massima, che è anche quella di default, arriva fino ai microsecondi
+	\end{itemize}
+	Si noti che se viene specificato sia \texttt{fields} che \texttt{p}, il campo \texttt{fields} \textbf{deve includere} anche \texttt{SECONDS}, poiché la precisione specificata riguarda unicamente i secondi.\\
+	La sintassi completa per esprimere un tipo \texttt{interval} è quindi:
+	\begin{lstlisting}
+	INTERVAL [fields] [(p)]
+	\end{lstlisting}
+	\textcolor{crimson}{Attenzione!} Solo la differenza tra due tipi \texttt{time} o \texttt{timestamp} o \texttt{interval} restituisce come risultato un \texttt{interval}. La differenza tra due tipi \texttt{date} \textbf{non} restituisce un \texttt{interval}, bensì un intero con segno che rappresenta il numero di giorni trascorsi tra le due date.
+	\section{Date} È possibile passare in input una data e/o un'ora in molti formati diversi, inclusi ISO, 8601, e POSTGRES, ma sempre sotto forma di stringa. PostgreSQL si occuperà di fare il \textit{parsing} della stringa e di interpretare il suo valore come data (si veda la documentazione per un elenco completo dei formati accettati).\\È importante sottolineare che alcuni di questi formati sono \textbf{ambigui} (ad esempio, 5/6/2020 è interpretato come 5 giugno 2020 in formato DMY o come 6 maggio 2020 in formato MDY), quindi quando vengono utilizzati richiedono di specificare il parametro \textcolor{blue}{\texttt{DateStyle}} per dichiarare il modo in cui vogliamo che siano interpretate le nostre stringhe, ad esempio:
+	\begin{lstlisting}
+	SET DateStyle TO MDY;
+	SET DateStyle TO ISO, DMY;
+	\end{lstlisting}
+	\textbf{Il formato standard non ambiguo di PostgreSQL per le date è \texttt{YYYY-MM-DD}} e questo è anche il modo in cui il sistema rappresenta internamente qualunque data.\vspace{10px}
+	\begin{tcolorbox}[enhanced jigsaw, breakable,title=Esempio, title filled]
+		\begin{lstlisting}
+		CREATE TABLE manytimes(
+		dateval DATE
+		);
+		
+		INSERT INTO manytimes(dateval) VALUES ('1999-01-08'), ('January 8, 1999'), ('19990108'), ('1/8/1999');
+		
+		SELECT * FROM manytimes;
+		\end{lstlisting}
+		L'output della \texttt{SELECT} è:\vspace{10px}\\
+		\texttt{dateval\\-------------------\\1999-01-08\\1999-01-08\\1999-01-08\\1999-01-08}\vspace{10px}
+	\end{tcolorbox}
+	\section{Time} Per quanto specificare i tipi \texttt{TIME} ci sono due opzioni:
+	\begin{itemize}
+		\item \textcolor{blue}{\texttt{TIME}}, che è sinonimo della foram verbosa \textcolor{blue}{\texttt{TIME WITHOUT TIME ZONE}}, in cui si specifica solo l'orario senza time zone
+		\item \textcolor{blue}{\texttt{TIME WITH TIME ZONE}}, in cui si specifica anche il fuso orario.
+	\end{itemize}
+	Se si specifica una time zone o una data per un tipo \texttt{TIME} semplice, non si incorre in un errore, però il sistema rappresenterà solo l'ora, ignorando sia data che fuso orario. Nella documentazione si trovano tutti i modi per esprimere una l'orario e le time zones.\\
+	Se invece si non si specifica il fuso orario per un tipo dichiarato \texttt{TIME WITH TIME ZONE}, allora si assume di trovarsi nella time zone indicata nel paramentro \textcolor{blue}{\texttt{TimeZone}} e viene convertita in UTC usando l'offset adeguato.
+	\section{Time stamp} Valori accettati per il tipo \texttt{TIMESTAMP} sono concatenazioni di data e ora, seguiti eventualmente da una time zone e/o da AD o BC.
+	\begin{tcolorbox}[enhanced jigsaw, breakable, title=Esempio, title filled]
+		Tutti i seguenti input sono accettati per un tipo \texttt{TIME STAMP}:
+		\begin{lstlisting}
+		1999-01-08 04:05:06
+		1999-01-08 04:05:06 -8:00
+		January 8 04:05:06 1999 PST
+		\end{lstlisting}
+		I primi due seguono lo standard ISO 8601.\\
+		Nel secondo caso, si noti che la time zone viene introdotta da segno '-' (o '+'), e l'offset rispetto al meridiano di Greenwich.
+	\end{tcolorbox}
+	Se il tipo è specificato \texttt{TIMESTAMP WITHOUT TIME ZONE}, PostgreSQL ignora implicitamente qualunque indicazione di una time zone, senza sollevare alcun errore.
+	\paragraph{Input} Per il tipo \texttt{TIMESTAMP WITH TIME ZONE}, il sistema memorizza internamente il valore sempre in formato UTC (\textit{Universal Coordinated Time}, conosciuto tradizionalmente come GMT, \textit{Greenwich Mean Time}).\\Una stringa in cui viene specificata esplicitamente la time zone viene conversita in UTC utilizzando un offset appropriato per quella time zone.
+	\paragraph{Output} Quando invece si deve fornire un \texttt{TIMESTAMP WITH TIME ZONE} in output, questa viene mostrata secondo il tempo locale rispetto alla time zone specificata.
+	\section{Il non-valore NULL: approfondimento} 
+	Il valore \texttt{NULL} rappresenta un valore (o meglio, un non-valore) speciale in SQL, che ha bisogno di essere trattato a parte. \\La presenza di \texttt{NULL} in corrispondenza di un attributo indica uno stato in cui non si conosce il valore effettivo andrebbe collocato in corrispondenza di quell'attributo. A differenza di altri linugaggi come C e Java, \textbf{in SQL non è possibile usare gli operatori standard di confronto per testare la non valorizzazione di un certo attributo}.\\Con operatori standard di confronto intendiamo:
+	\begin{center}
+		\texttt{<, >, <=, >=, =, <>, !=}
+	\end{center}
+	In aggiunta a questi operatori standard, esistono due costrutti che permettono di scrivere in maniera più sintetica la condizione di presenza in un \textit{range} di valori (\texttt{a BETWEEN x AND y}) e la condizione di presenza in un \textit{insieme} di valori (\texttt{a IN (x, y, z, ... )}).\\
+	\textbf{Quando \texttt{NULL} viene confrontato con altri valori tramite questi operatori, il risultato del confronto sarà sempre \texttt{NULL}}. Questo vale anche nel caso in cui si effettui il confronto \texttt{NULL = NULL}.\\
+	Per sottolineare il concetto, illustriamo di seguito una serie di confronti che danno come risultato \texttt{NULL}:
+	\begin{lstlisting}
+	SELECT 5 = NULL;
+	
+	SELECT NULL = NULL;
+	
+	SELECT NULL > 5;
+	\end{lstlisting}
+	Tutte queste \texttt{SELECT} danno come risultato \texttt{NULL}.\\
+	Se si tenta di effettuare una selezione con la sintassi \texttt{attributo = NULL}, nessuna riga verrà selezionata nel risultato.
+	\begin{tcolorbox}[enhanced jigsaw, breakable,title=Esempio, title filled]
+		La selezione non produce alcuna riga:
+		\begin{lstlisting}
+		CREATE TABLE test( 
+		x INTEGER 
+		);
+		
+		INSERT INTO test VALUES(5), (NULL);
+		
+		SELECT x FROM test WHERE x = NULL;
+		\end{lstlisting}
+	\end{tcolorbox}
+	Per testare se un certo attributo non è stato valorizzato, esiste un operatore apposito: \textcolor{blue}{\texttt{IS}}.
+	\begin{lstlisting}
+	SELECT 5 IS NULL
+	\end{lstlisting}
+	Risultato: \textcolor{crimson}{\texttt{false}}.\\
+	\begin{lstlisting}
+	SELECT NULL IS NULL
+	\end{lstlisting}
+	Risultato: \textcolor{dkgreen}{\texttt{true}}.\\
+	\begin{lstlisting}
+	SELECT x IS NULL FROM test WHERE x = 5
+	\end{lstlisting}
+	Risultato: \textcolor{crimson}{\texttt{false}}.\\\\
+	È ammessa anche la sintassi \textcolor{blue}{\texttt{IS NOT}} \texttt{NULL} per verificare, al contrario, se un attributo è effettivamente stato valorizzato.
+	\chapter{Data Manipulation Language (DML)}
+	Il \textit{Data Manipulation Language} è la parte di SQL che fornisce i costrutti per l'aggiornamento, l'inserimento e la cancellazione dei dati. \\Importante sottolineare la differenza tra \textit{data definition} e \textit{data manipulation}: il primo consiste nella creazione delle \textit{strutture} della base di dati, e per farlo si serve di keyword quali \texttt{CREATE, DROP, ALTER} etc.\\Il secondo invece riguarda la manipolazione dei \textit{dati} stessi, quindi agisce sui valori memorizzati ma non sulle strutture. Le keyword utilizzate nelle operazioni di manipolazione sono \texttt{INSERT, DELETE, UPDATE}.
+	\section{Inserimento}
+	Al momento della sua creazione, una tabella è vuota, non contiene dati.\\L'operazione di \textit{inserimento}, implementata con il comando \texttt{INSERT}, permette di inserire nella tabella una riga alla volta; la sua sintassi è:
+	\begin{lstlisting}
+	INSERT INTO myTable(col_1, col_2, ..., col_n)
+	VALUES(val_1, val_2, ..., val_n);
+	\end{lstlisting}
+	Il significato è: inserisci nella tabella \texttt{myTable} i valori \texttt{val_1, val_2, ..., val_n} in corrispondenza delle colonne \texttt{col_1, col_2, ..., col_n}.\\
+	È ammessa anche una sintassi più sintetica, che permette di omettere i nome delle colonne della tabella:
+	\begin{lstlisting}
+	INSERT INTO myTable VALUES(val_1, val_2, ..., val_n);
+	\end{lstlisting}
+	Se si sceglie di inserire i dati in questo modo, bisogna accertarsi che l'ordine in cui si specificano i valori \texttt{val_1, val_2, ..., val_n} rispetti l'ordine delle colonne: questa caratteristica rende la notazione meno "robusta" della precedente, perché espone al rischio di inserire i dati nell'ordine sbagliato! È considerata quindi buona pratica utilizzare sempre la sintassi estesa, anche per motivi di maggiore leggibilità.\\
+	È possibile anche inserire molteplici righe con un singolo comando \texttt{INSERT}:
+	\begin{lstlisting}
+	INSERT INTO myTable(col_1, col_2, ..., col_n)
+	VALUES(x_1, x_2, ..., x_n), (y_1, y_2, ..., y_n), (z_1, z_2, ..., z_n) ...;
+	\end{lstlisting}
+	Sono ammessi inoltre altri due tipi di inserimento:
+	\begin{lstlisting}
+	INSERT INTO myTable DEFAULT VALUES;
+	\end{lstlisting}
+	oppure posso inserire nella tabella le righe che costituiscono il risultato di una query:
+	\begin{lstlisting}
+	INSERT INTO table_1 (a, b, c)
+	SELECT a, b, c FROM table_2
+	WHERE <condition>;
+	\end{lstlisting}
+	Ovviamente, il vincolo per poter eseguire questo inserimento è che le due tabelle, \texttt{table_1} e \texttt{table_2}, abbiano almeno un sottoinsieme di colonne in comune.\\In questo modo, inserisco tutte le righe che ho selezionato con la query dalla tabella \texttt{table_2} nella tabella \texttt{table_1}.
+	Con questo comando si inseriscono, laddove specificati, i valori di default, altrimenti viene inserito \texttt{null}.\\
+	\section{Cancellazione}
+	La rimozione di un sottoinsieme di righe di una tabella è possibile mediante il comando
+	\begin{lstlisting}
+	DELETE FROM <table_name> [ WHERE <condition> ]
+	\end{lstlisting}
+	Omettere la condizione non è sintatticamente sbagliato e porta all'eliminazione di tutte le righe dalla tabella. Se questo è l'effetto voluto, potrebbe avere più senso usare un \texttt{DROP TABLE}, cioè eliminare la tabella stessa dalla base di dati.
+	\section{Aggiornamento}
+	La modifica dei dati presenti in un database è detta \texttt{UPDATE} (aggiornamento).\\L'esecuzione di un \texttt{UPDATE} richiede almeno tre informazioni:
+	\begin{itemize}
+		\item il\textit{ nome della tabella} in cui si trova la colonna da modificare
+		\item il \textit{nome della colonna} da modificare
+		\item il \textit{nuovo valore} da inserire
+	\end{itemize}
+	Eventualmente, si può specificare anche una condizione da soddisfare, che limita il sottoinsieme di righe che saranno modificate.\\
+	La sintassi per effettuare un aggiornamento è:
+	\begin{lstlisting}
+	UPDATE <table_name> SET <column_name> = <new_value> [ WHERE <condition> ]
+	\end{lstlisting}
+	\chapter{Data Query Language (DQL)}
+	Il comando che permette di recuperare i dati da una base di dati è chiamato \textit{query} (o \textit{interrogazione}).\\
+	In SQL, esiste un solo comando per interrogare una base di dati: \textcolor{blue}{\texttt{SELECT}}. La sintassi di una interrogazione generica è:
+	\begin{lstlisting}
+	SELECT [DISTINCT] [ * | expression [AS] output_name [, ...]]
+	[ FROM from_item [, ...] ]
+	[ WHERE condition ]
+	[ GROUP BY grouping_attribute [, ...] ]
+	[ HAVING condition [, ...] ]
+	[ { UNION | INTERSECT | EXCEPT } [ DISTINCT ] other_select ]
+	[ ORDER BY expression [ ASC | DESC | USING operator]]
+	\end{lstlisting}
+	dove:
+	\begin{itemize}
+		\item \texttt{expression} è un attributo
+		\item \texttt{from_item} determina la sorgente degli attributi
+		\item \texttt{condition} è un'espressione booleana che deve essere soddisfatta dalle righe che faranno parte del risultato.
+		\item \texttt{grouping_attribute} è un'espressione che permette di "raggruppare" tutte le righe che hanno lo stesso valore per \texttt{attribute}, solitamente per poi performare determinate operazioni su queste righe e mostrare solo la riga di risultato.
+	\end{itemize}
+	Le clausole racchiuse tra parentesi quadre, [ ... ], sono da considerarsi opzionali.	\\L’esecuzione di una \texttt{SELECT} produce una relazione risultato che ha come schema tutti gli attributi elencati nella clausola \texttt{SELECT}, ha come contenuto tutte le tuple t ottenute proiettando sugli attributi dopo ha come contenuto tutte le tuple t ottenute proiettando sugli attributi dopo SELECT, le tuple t' appartenenti al prodotto cartesiano delle tabelle ottenute dopo il \texttt{FROM} che soddisfano l’eventuale condizione nella clausola \texttt{WHERE/HAVING/GROUP BY}.
+	\section{SELECT}
+	La sintassi per specificare una \texttt{SELECT} è la seguente:
+	\begin{lstlisting}
+	SELECT [DISTINCT] [{* | expression [AS output_name]} [, ...]]
+	\end{lstlisting}
+	dove:
+	\begin{itemize}
+		\item * è una abbreviazione che serve a indicare tutti gli attributi della tabella sorgente 
+		\item \texttt{expression} è un’espressione che coinvolge gli attributi della tabella (può
+		anche essere semplicemente il nome di un attributo)
+		\item \texttt{output_name} è il nome assegnato all’attributo che conterrà il risultato della valutazione di \texttt{expression} nella relazione risultato
+		\item \texttt{DISTINCT} è una keyword che richiede l'eliminazione di tutti i duplicati di una tupla
+	\end{itemize}
+	\section{FROM}
+	Nella clausola \texttt{FROM} si specificano le tabelle in cui si devono ricercare le righe che andranno a far parte del risultato.\\
+	Nel caso in cui vengano specificate più tabelle separate da una virgola, la tabella in cui si effettua la ricerca è quella che risulta dal \textit{prodotto cartesiano} delle tabelle specificate.\\ Quindi la seguente sintassi:
+	\begin{lstlisting}
+	FROM table_1, table_2, ... table_n
+	\end{lstlisting}
+	equivale a: \texttt{table_1} $\times$ \texttt{table_1} $\times$ ... $\times$ \texttt{table_n}.\\
+	La tabella sorgente può anche essere quella risultante da una subquery:
+	\begin{lstlisting}
+	FROM ( SELECT ... FROM ...) AS nomeRisultato
+	\end{lstlisting}
+	Per approfondimenti sulle \textit{interrogazioni nidificate}, si vada alla sezione 4.8.\\
+	Tuttavia, nella maggior parte dei casi, le n tabelle specificate nel \texttt{FROM} vengono "legate" tra loro tramite gli operatori di \texttt{JOIN}:
+	\begin{lstlisting}
+	FROM table_1
+	JOIN table_2 [ON join_condition]
+	JOIN ...
+	\end{lstlisting}
+	Il \texttt{JOIN} permette di selezionare solo un certo sottoinsieme del prodotto cartesiano di n tabelle; vista la grande frequenza del suo utilizzo, merita una trattazione più approfondita.
+	\subsection{Operatori di JOIN}
+	Esistono diversi modi per effettuare il \texttt{JOIN} tra più tabelle.\\
+	Il primo operatore di questo tipo ad essere dichiarato nello standard è stato il \texttt{CROSS JOIN}, che equivale a un prodotto cartesiano; a partire da SQL-2 sono stati introdotti altri tipi di \texttt{JOIN}: \texttt{INNER JOIN, LEFT OUTER JOIN, RIGHT OUTER JOIN} e \texttt{FULL OUTER JOIN}.
+	\paragraph{}La clausola \textcolor{blue}{\texttt{NATURAL JOIN}} ha la semantica del join naturale dell'algebra relazionale, dunque genera una sorgente di dati che include le righe delle tabelle che presentano lo stesso valore per l'attributo in comune.
+	\paragraph{}La clausola \textcolor{blue}{\texttt{[INNER] JOIN}} corrisponde al $\theta$-join dell'algebra relazionale, ovvero un operatore che effettua il \texttt{JOIN} di due tabelle sulla base di una condizione, espressa dopo la keyword \texttt{ON}:
+	\begin{lstlisting}
+	SELECT a, b, x, y
+	FROM table1 t1 
+	[INNER] JOIN table2 t2 ON t1.a = t2.x
+	\end{lstlisting}
+	Si noti che quando si esegue un \texttt{INNER JOIN}, alle tabelle viene solitamente dato un nome temporaneo. Nel nostro caso, \texttt{table1} diventa \texttt{t1} e \texttt{table2} diventa \texttt{t2}. Pur non essendo obbligatoria, questa notazione è spesso è utile per distinguere attributi con lo stesso nome che appartengono a tabelle diverse. Si deduce quindi che la clausola \texttt{INNER JOIN} non può essere usata per eseguire il join naturale.
+	\paragraph{}La clausola \texttt{t1} \textcolor{blue}{\texttt{LEFT [OUTER] JOIN}} \texttt{t2} esegue prima un normale \texttt{INNER JOIN} su condizione. Dopodiché, \textit{ogni riga di t1 che non soddisfa la condizione di join viene aggiunta al risultato}, inserendo \texttt{NULL} negli attributi della riga risultato che appartengono a \texttt{t2}. Notare che nel \textcolor{blue}{\texttt{LEFT}} \texttt{OUTER JOIN} si aggiungono le righe della tabella specificata a \textit{sinistra}.
+	\paragraph{}La clausola \texttt{t1} \textcolor{blue}{\texttt{RIGHT [OUTER] JOIN}} \texttt{t2} è simmetrica al \texttt{LEFT JOIN}: al risultato dell'\texttt{INNER JOIN} si aggiungono tutte le righe della tabella specificata a \textit{destra} del join che non rispettano la condizione, inserendo \texttt{NULL} in tutti gli attributi della riga risultato che appartengono alla tabella specificata a sinistra.
+	\paragraph{}La clausola \textcolor{blue}{\texttt{FULL [OUTER] JOIN}} è equivalente a performare \texttt{INNER JOIN + LEFT JOIN + RIGHT JOIN}. \textbf{Non} è equivalente a fare \texttt{CROSS JOIN}!
+	\section{WHERE}
+	La clausola \textcolor{blue}{WHERE} esprime una condizione, specificata come espressione booleana, che le righe della tabella sorgente devono rispettare per essere inserite nel risultato.\\La sintassi è la seguente:
+	\begin{lstlisting}
+	WHERE condition
+	\end{lstlisting}
+	Se le colonne coinvolte nella condizione contengono valori numerici, si possono utilizzare tutti gli operatori di confronto conosciuti.\\
+	Se le colonne contengono invece caratteri o stringhe, è possibile utilizzare anche gli operatori \textcolor{blue}{\texttt{LIKE}} e \textcolor{blue}{\texttt{SIMILAR TO}}.\\
+	\begin{tcolorbox}[enhanced jigsaw, breakable, title=Attenzione! WHERE e operatori di aggregazione, colframe=red!70!black]
+	Nel clausola \texttt{WHERE} non è ammesso l'utilizzo di operatori di aggregazione.\\Per esempio, una query di questo tipo:
+	\begin{lstlisting}
+	SELECT DISTINCT id_insegn
+	FROM inserogato
+	WHERE COUNT(DISTINCT annoaccademico) > 2; 
+	\end{lstlisting}
+	verrebbe rifiutata con il seguente errore:
+	\begin{lstlisting}
+	ERROR:  aggregate functions are not allowed in WHERE
+	LINE 3: WHERE COUNT(DISTINCT annoaccademico) > 2
+	\end{lstlisting}
+	Il motivo è che la clausola WHERE è pensata per eseguire selezioni su \textit{righe}, non su gruppi, quindi non ha senso imporre delle condizioni di selezioni che richiedono di fare operazioni su insiemi di righe.\\Se c'è l'esigenza di selezionare solo certi insiemi di righe in base a una condizione data da un operatore di aggregazione, si può utilizzare la clausola \texttt{HAVING}, che verrà affrontata nella sezione 4.6.
+	\end{tcolorbox}
+	\subsection{LIKE e SIMILAR TO}
+	PostgreSQL permette di effettuare verifiche di \textit{pattern matching} su stringhe, il che vuol dire testare se una stringa presenta un cert "schema". Lo schema si vuole che sia rispettato viene specificato utilizzando uno strumento chiamato \textit{espressioni regolari}.\\
+	In PostgreSQL esistono tre modi diversi fare test di \textit{pattern matching}:
+	\begin{itemize}
+		\item il tradizionale operatore \textcolor{blue}{\texttt{[NOT] LIKE}}
+		\item il più recente operatore \textcolor{blue}{\texttt{[NOT] SIMILAR TO}}
+		\item le espressioni regolari in stile POSIX
+	\end{itemize}
+	Di seguito forniamo uno schema in cui si riassumono le varianti e i sinonimi dell'operatore \texttt{LIKE}:\vspace{10px}\\
+	\begin{tabular}{l l l}
+		Operatore & Sinonimo & Variazione di significato\\
+		\hline
+		\texttt{LIKE} & \texttt{\texttildelow\texttildelow} & -\\ 
+		\texttt{NOT LIKE} & \texttt{!\texttildelow\texttildelow} & è la negazione di \texttt{LIKE}\\
+		\texttt{ILIKE} & \texttt{\texttildelow\texttildelow*} & è la versione \textit{case insensitive}\\
+		\texttt{NOT ILIKE} & \texttt{!\texttildelow\texttildelow*} & è la negazione di \texttt{ILIKE}
+	\end{tabular}\vspace{10px}\\
+	La sua sintassi di questo operatore è:
+	\begin{lstlisting}
+	WHERE attributo [NOT] {LIKE | ILIKE} 'regexp';
+	\end{lstlisting}
+	La stringa contenuta in \texttt{attribute} viene confrontata con il \textit{pattern} specificato nella stringa \texttt{'regexp'}, che rappresenta un'espressione regolare. L'operatore \texttt{LIKE} non impone quindi l'uguaglianza tra la stringa e \texttt{'regexp'}, ma richiede che la stringa rispetti il pattern specificato.\\
+	Per la sintassi delle espressioni regolari di PostgreSQL si rimanda alla documentazione ufficiale.\\
+	\paragraph{}La keyword \textcolor{blue}{\texttt{SIMILAR TO}} opera in modo simile a LIKE, ma il pattern specificato in \texttt{'regexp'} viene interpretato secondo la definizione standard di SQL (\textbf{POSIX}) per le espressioni regolari, che sono sostanzialmente una via di mezzo tra la notazione accettata da \texttt{LIKE} e la notazione standard delle espressioni regolari. In ultima analisi \texttt{SIMILAR TO} risulta quindi essere più espressivo di \texttt{LIKE}, perché è possibile esprimere un sottoinsieme maggiore di espressioni regolari.
+	\section{ORDER BY}
+	La clausola \textcolor{blue}{\texttt{ORDER BY}}, posta subito dopo il \texttt{WHERE}, permette di ordinare le tuple del risultato rispetto a uno o più attributi.
+	\begin{lstlisting}
+	WHERE ...
+	ORDER BY attribute [{ASC | DESC}] [, ...]
+	\end{lstlisting}
+	Le keyword \texttt{ASC, DESC} specificano l'ordine crescente (default) o descrescente.\\
+	Se vengono specificati più attributo, ad esempio:
+	\begin{lstlisting}
+	ORDER BY nome, cognome, matricola
+	\end{lstlisting}
+	Si ordina prima rispetto al nome, che è il primo attributo specificato. A parità di nome, si ordina rispetto al cognome, e a parità di nome e cognome si ordina per matricola.\\
+	È ammesso usare nella clausola \texttt{ORDER BY} anche espressioni ed è uno dei pochi casi in cui è possibile specificare a una colonna con il nome con cui è stata rinominata nella \texttt{SELECT}. Ad esempio, la seguente sintassi \textbf{è legale}:
+	\begin{lstlisting}
+	SELECT a + b AS sum, c, d 
+	FROM table
+	ORDER BY sum	-- corretto!
+	\end{lstlisting}
+	Ma non è concesso utilizzare il nuovo nome in una espressione!\\Infatti, la seguente sintassi \textbf{non è legale}:
+	\begin{lstlisting}
+	SELECT a + b AS sum, c, d 
+	FROM table
+	ORDER BY sum + c	-- errore!
+	\end{lstlisting} 
+	Infine, l'\texttt{ORDER BY} è utilizzabile anche per ordinare il risultato di una \texttt{UNION, INTERSECT} o \texttt{EXCEPT}, ma in questo caso si possono specificare solo nomi di colonne, non espressioni. Infatti la seguente query dà errore:
+	\begin{lstlisting}
+	(SELECT cs.nome, cs.durataanni AS anni, i.nomeins
+	FROM corsostudi cs
+		JOIN inserogato ie ON ie.id_corsostudi = cs.id
+		JOIN insegn i ON ie.id_insegn = i.id
+	WHERE ie.annoaccademico = '2010/2011'
+	
+	EXCEPT
+	
+	SELECT cs.nome, cs.durataanni AS anni, i.nomeins
+	FROM corsostudi cs
+		JOIN inserogato ie ON ie.id_corsostudi = cs.id
+		JOIN insegn i ON ie.id_insegn = i.id
+	WHERE ie.annoaccademico = '2010/2011' AND 
+	ie.hamoduli = '1')
+	ORDER BY anni + 2;		-- errore: uso il nome di una colonna rinominata in 
+							-- un'espressione
+	\end{lstlisting}
+	\begin{lstlisting}
+	ERROR:  invalid UNION/INTERSECT/EXCEPT ORDER BY clause
+	LINE 15: order by anni + 2;
+	^
+	DETAIL:  Only result column names can be used, not expressions or functions.
+	\end{lstlisting}
+	\section{GROUP BY}
+	La clausola \texttt{GROUP BY}, posta dopo il \texttt{WHERE}, ha l'effetto di raggruppare tra loro tutte le righe della tabella risultato che presentano lo stesso valore per la colonna specificata:
+	\begin{lstlisting}
+	WHERE ...
+	GROUP BY column_name
+	\end{lstlisting}
+	Se la clausola \texttt{SELECT} non contiene operatori di aggregazione, allora nel \texttt{GROUP BY} deve menzionare \textit{tutti} gli attributi che compaiono nella \texttt{SELECT}. Il motivo è che un raggruppamento ha lo scopo di "mettere insieme" tutte le righe che presentano un certo valore per determinati attributi, poi nella tabella risultante si mostra \textit{solo} una riga "rappresentante" di quel gruppo. Ma se esistono colonne che non sono incluse nel raggruppamento, e che quindi potrebbero avere valori distinti, com'è possibile scegliere una riga rappresentante? Che valori dovrei mostrare nelle colonne degli attributi non coinvolti nel raggruppamento? Da qui, la necessità di menzionare nella clausola \texttt{GROUP BY} tutti gli attributi che verranno mostrati nel risultato.\\ \\
+	Se invece la clausola \texttt{SELECT} contiene attributi semplici insieme a operatori di aggregazione, allora la clausola \texttt{GROUP BY} è \textit{obbligatoria} e deve menzionare tutti gli attributi che non sono coinvolti nell'operatore di aggregazione (vedi esempio nella sezione 4.7).\\La clausola \texttt{GROUP BY} può essere usata in modo da produrre un effetto simile al \texttt{DISTINCT} eliminando quindi la ridondanza del risultato.\\
+	\begin{tcolorbox}[enhanced jigsaw, breakable,title=Esempio, title filled]
+		Supponiamo che \texttt{table} sia una tabella contenente un campo \texttt{x} di tipo \texttt{CHAR} e un campo \texttt{y} di tipo \texttt{INTEGER}:
+		\begin{lstlisting}
+		SELECT *
+		FROM table;
+		\end{lstlisting}
+		produce:\vspace{10px}\\
+		\texttt{x  |  y\\-----------\\a  |  3\\c  |  2\\b  |  5\\a  |  1}\vspace{10px}\\
+		mentre il seguente comando:
+		\begin{lstlisting}
+		SELECT x
+		FROM table
+		GROUP BY x;
+		\end{lstlisting}
+		produce un output senza ridondanze rispetto all'attributo x:\vspace{10px}\\ \\
+		\texttt{x \\-----\\a\\c\\b}
+	\end{tcolorbox}
+	\section{HAVING}
+	La clausola \texttt{HAVING} permette di selezionare i raggruppamenti formati da \texttt{GROUP BY} in base a un certo predicato.
+	\begin{lstlisting}
+	GROUP BY ...
+	HAVING bool_exp
+	\end{lstlisting}
+	Dato che \texttt{HAVING} lavora sui raggruppamenti, ovviamente è \textit{obbligatorio} avere una clausola \texttt{GROUP BY} prima di \texttt{HAVING}.\\
+	\textit{Osservazione:} \texttt{HAVING} ha sui gruppi lo stesso effetto che \texttt{WHERE} ha sulle righe!\\
+	\begin{tcolorbox}[enhanced jigsaw, breakable,title=Esempio particolare, title filled]
+		Con il seguente comando si vogliono visualizzare le città i cui studenti hanno una media aritmetica dei voti superiore a 23.47:
+		\begin{lstlisting}
+		SELECT citta, AVG(media)::DECIMAL(5,2) AS "roundAvg" 
+		FROM Studente
+		GROUP BY citta
+		HAVING AVG(media) > 23.47;
+		\end{lstlisting}
+		In output abbiamo la seguente tabella:\vspace{10px}\\
+		\begin{tabular} {| l | l |}
+			\hline
+			citta & roundAvg\\
+			\hline
+			Padova & 28.67\\
+			Vicenza & 25.39\\
+			Verona & 23.47\\
+			\hline
+		\end{tabular}\vspace{10px}\\
+		Notiamo subito che c'è una riga che non ci aspettavamo, ovvero la terza: con la condizione che abbiamo imposto nella clausola \texttt{HAVING} vorremmo vedere solo le città la cui media è \textit{strettamente maggiore di 23.47}, quindi 23.47 escluso.\\Il motivo di questo strano risultato sta nel cast effettuato nella \texttt{SELECT}: avendo specificato \texttt{ AVG(media)::DECIMAL(5,2)}, chiediamo si \textit{visualizzare} solo due cifre decimali, ma il valore memorizzato in tabella rimane invariato! Il fatto che venga mostrata anche la riga di Verona ci suggerisce che il valore  di media effettivamente memorizzato è leggermente maggiore di 23.47, per esempio 23.47\textcolor{blue}{3}, sufficiente a renderlo strettamente maggiore di 23.47. Anche se nel risultato vengono mostrate solo due cifre decimali che potrebbero risultare ingannevoli, sappiamo che anche la terza riga rispetta la condizione.
+	\end{tcolorbox}
+	\section{Operatori di aggregazione}
+	Gli \textit{operatori di aggregazione} sono degli operatori che permettono di calcolare \textit{un solo} valore a partire dai valori ottenuti con una \texttt{SELECT}.\\Più precisamente, questi operatori considerano i valori contenuti in una colonna, eseguono un qualche tipo di operazione (che dipende dall'operatore) e restituiscono \textit{una sola} riga in cui mostrano il risultato dei calcoli eseguiti.\\
+	In questo corso affronteremo con più attenzione i seguenti operatori:
+	\begin{itemize}
+		\item \texttt{COUNT}
+		\item operatori aritmetici: \texttt{SUM, MIN, MAX, AVG}
+		\item operatori booleani: \texttt{BOOL_AND, BOOL_OR}
+	\end{itemize}
+	A eccezione di \texttt{COUNT}, questi operatori ritornano \texttt{NULL} quando non viene selezionata alcuna riga su cui performare il calcolo: ad esempio, la somma \texttt{SUM} di nessuna riga ritorna \texttt{NULL}, non zero come ci si aspetterebbe.\\
+	È fondamentale ricordarsi utilizzare gli operatori di aggregazione insieme alla clausola \texttt{GROUP BY} se nella \texttt{SELECT} compaiono anche colonne che non sono coinvolte nell'operazione di aggregazione, perché il risultato deve essere sempre \textit{una sola riga!} \\
+	\begin{tcolorbox}[enhanced jigsaw, enhanced jigsaw, breakable,title=Esempio, title filled]
+		La seguente query
+	\begin{lstlisting}
+	SELECT cs.nome, COUNT(i.nomeins)
+	FROM corsostudi cs
+		JOIN inserogato ie ON ie.id_corsostudi = cs.id
+		JOIN insegn i ON ie.id_insegn = i.id
+	WHERE ie.annoaccademico = '2010/2011';
+	\end{lstlisting}
+		restituisce questo errore:
+	\begin{lstlisting}
+	ERROR:  column "cs.nome" must appear in the GROUP BY clause or be used in an aggregate function
+	LINE 1: select cs.nome, count(i.nomeins)
+	\end{lstlisting}
+		L'errore spiega che, dal momento che \texttt{cs.nome} non è coinvolto nell'operazione di \texttt{COUNT}, bisogna effettuare un raggruppamento rispetto ad esso.\\
+		La query corretta è:
+	\begin{lstlisting}
+	SELECT cs.nome, COUNT(i.nomeins)
+	FROM corsostudi cs
+		JOIN inserogato ie ON ie.id_corsostudi = cs.id
+		JOIN insegn i ON ie.id_insegn = i.id
+	WHERE ie.annoaccademico = '2010/2011'
+	GROUP BY cs.nome;	    -- !!
+	\end{lstlisting}
+	In questo modo vengono formati dei gruppi: tutte le righe che appartengono a un certo gruppo presentano lo stesso per l'attributo \texttt{cs.nome}. Dopodiché, viene effettuata l'operazione di \texttt{COUNT} sulle righe appartenenti allo stesso gruppo e il risultato sarà una riga sola contenente il nome del corso di studi e il risultato di \texttt{COUNT}. Ovviamente nel risultato complessivo avremo tante righe quanti sono i valori distinti di \texttt{cs.nome}.	
+	\end{tcolorbox}
+	\subsection{COUNT}
+	Questo operatore resituisce il numero di tuple \textit{significative} nel risultato di una interrogazione. Con \textit{"significative"} si intende quelle tuple che sono effettivamente valorizzate, ovvero non contengono \texttt{NULL}.\\
+	La sintassi è:
+	\begin{lstlisting}
+	COUNT({ * | expr | ALL expr | DISTINCT expr})
+	\end{lstlisting}
+	dove \texttt{expr} è un'espressione che usa attributi e funzioni di attributi ma \textbf{non operatori di aggregazione}. Nel dettagli:
+	\begin{itemize}
+		\item \texttt{COUNT(*)} ritorna il numero di tuple totali del risultato dell'interrogazione, contando anche quelle che contengono valori nulli.
+		\item \texttt{COUNT(expr)} ritorna il numero di tuple che soddisfano una certa condizione.\footnote{spesso, \texttt{expr} è semplicemente il nome di una colonna. In questo caso, si contano tutti i valori \textit{significativi} della colonna, ovvero tutti i valori non nulli}.
+		\item \texttt{COUNT(ALL expr)} ha lo stesso significato di \texttt{COUNT(expr)}
+		\item \texttt{COUNT(DISTINCT expr)} è come \texttt{COUNT(expr)}, ma con l'ulteriore condizione che si contano solo i valori \textit{distinti} di \texttt{expr}.
+	\end{itemize}
+	\subsection{SUM, MIN, MAX, AVG}
+	Questi sono tutti operatori aritmetici che determinano un valore numerico (\texttt{SUM/AVG}) o alfanumerico (\texttt{MAX/MIN})\footnote{\texttt{MAX} e \texttt{MIN} possono essere usati anche su stringhe!}.\\
+	La sintassi di questi operatori è:
+	\begin{lstlisting}
+	{SUM | MAX | MIN | AVG}({expr | DISTINCT expr})
+	\end{lstlisting}
+	Il significato di aggiugnere la keyword \texttt{DISTINCT} all'interno  delle parentesi ha lo stesso significato che per \texttt{COUNT}.
+	\subsection{BOOL_AND, BOOL_OR}
+	Gli operatori \texttt{BOOL_AND} e \texttt{BOOL_OR} sono detti operatori booleani perché eseguono un'operazione logica sull'insieme di righe e restituiscono un valore di verità, \texttt{true/false}.\\
+	\begin{lstlisting}
+	{BOOL_AND | BOOL_OR} (expr)
+	\end{lstlisting}
+	Come si intuisce facilmente dal nome, \texttt{BOOL_AND} verifica se tutte le righe del risultato soddisfano l'espressione specificata, mentre \texttt{BOOL_OR} verifica che almeno una delle righe soddisfi l'espressione.
+	\section{Interrogazioni nidificate}
+	Un'interrogazione si dice \textit{nidificata} o \textit{innestata} quando è presente all'interno di un'altra interrogazione. La query innestata può comparire nel \texttt{FROM}, nel \texttt{WHERE} o nel \texttt{SELECT}.\\
+	\begin{tcolorbox}[enhanced jigsaw, breakable,title=Esempio, title filled]
+	Seleziono i titoli delle mostre in cui il prezzo è massimo tra tutte le mostre della tabella.
+	\begin{lstlisting}
+	SELECT titolo, prezzoIntero
+	FROM mostra, (SELECT MAX(prezzoIntero) FROM mostra) AS T(prezzoMax)
+	WHERE prezzoIntero=prezzoMax
+	\end{lstlisting}
+	\end{tcolorbox}
+	Con le query nidificate è possibile effettuare il confronto tra un attributo \textit{un valore singolo} e il risultato di una query (\textit{possibile insieme di valori}). Per effettuare questi confronti, \textbf{non è possibile utilizzare gli operatori di confronto stardard}, ovvero: $<, <=, >, >=, <>, =$ .\\
+	Invece, sono stati creati degli operatori appositi, tra cui:
+	\begin{itemize}
+		\item \texttt{[NOT] EXISTS}
+		\item \texttt{[NOT] IN}
+		\item \texttt{ALL}
+		\item \texttt{ANY/SOME}
+	\end{itemize}
+	\subsection{EXISTS}
+	La sintassi di questo operatore è:
+	\begin{lstlisting}
+	EXISTS (subquery)
+	\end{lstlisting}
+	L'argomento di \texttt{EXISTS} è un qualunque comando \texttt{SELECT}. La subquery viene valutata per determinare se produce delle righe: se viene prodotta \textit{almeno una riga}, il risultato dell'\texttt{EXISTS} sarà \texttt{true}; altrimenti, sarà \texttt{false}.
+	\paragraph{}L'utilizzo della clausola \texttt{EXISTS} ha senso solo se all'interno della subquery si selezionano le righe usando qualche valore della riga corrente della \texttt{SELECT} principale, ovvero se c'è \textit{data binding}.
+	\begin{tcolorbox}[enhanced jigsaw, breakable, title=Problema: data binding, colframe=red!70!black]
+		Il \textit{data binding} rende l'esecuzione dell'intera query poco efficiente! Questo perché, dato che il risultato della subquery dipende dai valori della riga corrente nella \texttt{SELECT} principale, è necessario ri-eseguire la subquery per ogni riga analizzata dalla query principale.\\L'inefficienza si manifesta soprattutto quando la subquery non produce alcuna riga, perché si è costretti a fare il test su tutte le righe della tabella su cui la subquery lavora. Se invece viene prodotta almeno una riga, l'esecuzione si ferma alla prima riga trovata (dalla doc: \textit{"The subquery will generally only be executed long enough to determine whether at least one row is returned, not all the way to completion"}).
+	\end{tcolorbox}
+	Dal momento che il risultato della query dipende solo dal fatto che vengano prodotte delle righe o meno, e non dal contenuto delle righe prodotte, l'output della subquery è irrilevante: è convenzione scrivere i test di esistenza nella forma \texttt{EXISTS(SELECT 1 ... )}. \\
+	\begin{tcolorbox}[enhanced jigsaw, breakable,title=Esempio, title filled]
+		Si vogliono visualizzare i nomi dei corsi di studio che nel 2006/2007 hanno erogato insegnamenti il cui nome contiene la sottostringa ’Info’:
+	\begin{lstlisting}
+	SELECT CS.nome 
+	FROM CorsoStudi CS
+	WHERE EXISTS (
+		SELECT 1 
+		FROM InsErogato IE 
+			JOIN Insegn I ON IE.id_insegn = I.id
+		WHERE I.nomeins LIKE '%Info%' AND 
+			IE.annoaccademico = '2006/2007' AND 
+			IE.id_corsostudi = CS.id);
+		\end{lstlisting}
+	\end{tcolorbox}
+	Esistono modi più efficienti per ottenere lo stesso risultato di \texttt{EXISTS} con altri operatori.
+	\subsection{IN}
+	Ci sono due possibili sintassi per questo operatore: nel caso in cui si voglia confrontare il valore di una \texttt{expression} (che può essere anche un singolo attributo) con un insieme di valori prodotti da una \texttt{subquery}:
+	\begin{lstlisting}
+	expression [NOT] IN (subquery)
+	\end{lstlisting}
+	\textit{Osservazione:} se l'espressione a sinistra di \texttt{IN} è \texttt{null}, oppure se nell'insieme dei valori generati dalla subquery non ce n'è alcuno che combacia con i valori dell'espressione e almeno uno di questi è \texttt{NULL}, allora il risultato di \texttt{IN} non sarà \texttt{false}, bensì \texttt{null}. Questa è in accordo con il modo in cui vengono valutate le espressioni booleane in presenza di valori nulli in SQL, perché la semantica dell'operatore \texttt{IN} è (in pseudo-codice): 
+	\begin{lstlisting}
+	if(expression = val_1 OR expression = val_2 OR ... OR expression = val_n){
+	return true
+	}
+	\end{lstlisting}
+	Dove \texttt{val_1, val_2, ..., val_n} sono gli n valori prodotti dalla subquery.\\
+	Comunque, avere una clausola \texttt{WHERE null} oppure \texttt{WHERE false} produce lo stesso effetto: il risultato della query principale contiene 0 righe.
+	\paragraph{}Nel caso invece in cui si voglia verificare la presenza di una riga nel risultato di una \texttt{subquery}:
+	\begin{lstlisting}
+	ROW(expression, [, ...]) [NOT] IN (subquery)
+	\end{lstlisting}
+	Di nuovo, \texttt{expression} può essere un'espressione vera e propria oppure un attributo.\\
+	Il numero di colonne prodotte dalla subquery deve essere uguale al numero di attributi specificati nella \texttt{ROW}.\\
+	L'operatore ritorna \texttt{true} se la riga specificata è presente anche nell'insieme di righe prodotte dalla subquery (con "essere presente" si intende "avere gli stessi valori di un'altra riga").\\
+	\begin{tcolorbox}[enhanced jigsaw, breakable,title=Esempio, title filled]
+		\begin{lstlisting}
+		SELECT I.nome, I.cognome
+		FROM Impiegato I
+		WHERE ROW(I.nome, I.cognome) IN (
+		SELECT I1.nome, I1.cognome 
+		FROM ImpiegatoAltraAzienda I1 );
+		\end{lstlisting}
+	\end{tcolorbox}
+	Come per la clausola \texttt{EXISTS}, non sempre le subquery viene completamente valutata: l'esecuzione viene interrotta non appena viene trovato il primo match.
+	\subsection{ANY/SOME}
+	\texttt{ANY} e \texttt{SOME} sono sinonimi e possono essere usati intercambiabilmente. La sintassi è la seguente:
+	\begin{lstlisting}
+	expression operator { ANY | SOME } (subquery)	
+	\end{lstlisting}
+	dove \texttt{expression} è un'espressione che coinvolge gli attributi della \texttt{SELECT} principale, \texttt{(subquery)} è una \texttt{SELECT} che deve restituire \textit{una sola colonna} (!), \texttt{operator} $\in {<,<=, >, >=, <>, =}$, quindi è un operatore di confronto.\\
+	Il risultato sarà \texttt{true} se e solo se \texttt{expression} è \texttt{operator} rispetto al valore di una qualsiasi riga del risultato di \texttt{(subquery).}\\
+	Altrimenti, il risultato è \texttt{false}, anche nel caso in cui la subquery restituisca 0 righe.\\
+	\textit{Osservazione:} l'operatore \texttt{IN} è semanticamente equivalente a \texttt{= ANY}.\\
+	Il valore \texttt{null} viene prodotto nelle stesse circostanze specificate per \texttt{IN}, ovvero quando non viene trovato alcun match e \textit{almeno un} valore della subquery è \texttt{null}.
+	\subsection{ALL}
+	La sintassi dell'operatore \texttt{ALL} è indentica a quella degli operatori \texttt{ANY} e \texttt{SOME}:
+	\begin{lstlisting}
+	expression operator ALL (subquery)
+	\end{lstlisting}
+	oppure, nel caso si voglia effettuare il confronto tra righe piuttosto che tra valori singoli:
+	\begin{lstlisting}
+	ROW(expression, [,...]) operator ALL (subquery)
+	\end{lstlisting}
+	In cui \texttt{subquery} deve restituire un insieme di righe che ha gli stessi attributi specificati in \texttt{ROW(expression, [,...])}.
+	Il risultato di \texttt{ALL} sarà:
+	\begin{itemize}
+		\item \texttt{true} se il risultato del confronto tra \texttt{expression} e le righe della subquery dà \texttt{true} per ogni riga della subquery
+		\item \texttt{false} se esiste almeno un confronto che dà \texttt{false}.
+		\item \texttt{null} se non esiste alcun confronto che restituisce \texttt{false} ed è presente almeno un confronto che restituisce null
+	\end{itemize}
+	Questo è in accordo con le regole per la valutazione di espressioni booleane di PostgreSQL in presenza di valori nulli.\\Così come per gli altri operatori precedentemente illustrati, anche in questo caso la valutazione di \texttt{ALL} è \textit{lazy}.\\
+	\textit{Osservazione:} \texttt{NOT IN} è semanticamente equivalente a scrivere \texttt{<> ALL} 
+	\subsection{Operatori insiemistici}
+	Esistono tre operatori specifici per effettuare operazioni insiemistiche sui risultati di due o più query, ovvero:
+	\begin{itemize}
+		\item \texttt{UNION}
+		\item \texttt{INTERSECT}
+		\item \texttt{EXCEPT}
+	\end{itemize}
+	La sintassi per questi operatori è:
+	\begin{lstlisting}
+	query1 {UNION | INTERSECT | EXCEPT} [ALL] query2
+	\end{lstlisting}
+	Gli operatori si possono applicare solo quando \texttt{query1}
+	e \texttt{query2} producono risultati con lo stesso numero di colonne e di tipo compatibile tra loro.\\
+	Tutti gli operatori eliminano dal risultato i duplicati a meno che non sia specificata la clausola \texttt{ALL}.
+	\paragraph{UNION} Viene calcolata l'\textbf{unione} tra i due insiemi di righe generati da \texttt{query1} e \texttt{query2}: una riga compare nel risultato finale se appartiene a uno dei due insiemi (si ricorda che, da un punto di vista logico, l'operazione di unione corrisponde a un OR).\\L'ordine in cui vengono specificate le query è irrilevante dal punto di vista del risultato finale.\\
+	\begin{tcolorbox}[enhanced jigsaw, breakable,title=Esempio, title filled]
+		Si vogliono visualizzare i nomi degli insegnamenti e i nomi dei corsi di laurea che non iniziano per ’A’ mantenendo i duplicati.
+		\begin{lstlisting}
+		SELECT nomeins
+		FROM Insegn
+		WHERE NOT nomeins LIKE 'A%'
+		
+		UNION ALL
+		
+		SELECT nome
+		FROM CorsoStudi
+		WHERE NOT nome LIKE 'A%';
+		\end{lstlisting}
+	\end{tcolorbox}
+	\paragraph{INTERSECT} Viene calcolata l'\textbf{intersezione} tra i due insiemi di righe generati da \texttt{query1} e \texttt{query2}: una riga compare nel risultato finale se appartiene a entrambi gli insiemi (si ricorda che, da un punto di vista logico, l'operazione di unione corrisponde a un AND).\\L'ordine in cui vengono specificate le query è irrilevante dal punto di vista del risultato finale.\\
+	\begin{tcolorbox}[enhanced jigsaw, breakable,title=Esempio, title filled]
+		Si vogliono visualizzare i nomi degli insegnamenti che sono anche nomi di corsi di laurea.
+		\begin{lstlisting}
+		SELECT nomeins 
+		FROM Insegn
+		
+		INTERSECT ALL
+		
+		SELECT nome
+		FROM CorsoStudi;
+		\end{lstlisting}
+	\end{tcolorbox}
+	\paragraph{EXCEPT} Viene calcolata la \textbf{differenza} tra i due insiemi di righe generati da \texttt{query1} e \texttt{query2}. In questo caso, l'ordine in cui vengono specificate le query è rilevante, perché l'operazione di differenza \textbf{non è commutativa}. Quindi:
+	\begin{lstlisting}
+	query1 EXCEPT query2
+	\end{lstlisting}
+	restituisce tutte le righe che appartengono all'insieme generato da \texttt{query1} ma non a quello di \texttt{query2}.\\
+	Viceversa:
+	\begin{lstlisting}
+	query2 EXCEPT query1
+	\end{lstlisting}
+	restituisce tutte le righe che appartengono all'insieme generato da \texttt{query2} ma non a quello di \texttt{query1}.\\
+	\begin{tcolorbox}[enhanced jigsaw, breakable,title=Esempio, title filled]
+		Si vogliono visualizzare i nomi degli insegnamenti che NON sono anche nomi di corsi di laurea.
+		\begin{lstlisting}
+		SELECT nomeins 
+		FROM Insegn
+		
+		EXCEPT
+		
+		SELECT nome
+		FROM CorsoStudi;
+		\end{lstlisting}
+	\end{tcolorbox}
+	\chapter{Introduzione agli indici e analisi delle prestazioni in SQL}
+	Gli indici sono delle strutture dati ausiliarie che permettono di accedere ai dati di una tabella in modo efficiente. Al momento della creazione di una tabella, il DBMS crea automaticamente degli indici sugli attributi dichiarati \texttt{PRIMARY KEY} e \texttt{UNIQUE}, perché sono tra quelli più utilizzati per l'esecuzione di due operazioni critiche: la ricerca di una tupla precisa e il join tra tabelle.\\ È importante tenere un indice aggiornato in modo da mantenere le prestazioni anche a fronte di svariate modifiche del contenuto della base di dati, ma il costo di mantenimento può diventare oneroso se sono presenti molti indici sulla medesima tabella. Inoltre, bisogna considerare che una struttura dati richiede sempre un certo spazio per essere memorizzata, che può essere anche non indifferente.\\A fronte di queste considerazioni preliminari, si intuisce subito che è importante saper definire gli indici con criterio. Fortunatamente, esistono anche degli strumenti che ci permettono di analizzare dettagliatamente il piano di esecuzione di una certa query, per capire se gli indici vengono utilizzati e se risultano utili ai fini di un miglioramento delle prestazioni.\\Gli indici possono contribuire ad ottimizzare le prestazioni di comandi di \texttt{SELECT}, \texttt{UPDATE} e \texttt{DELETE} (questi ultimi guadagnano efficienza se contengono la clausola \texttt{WHERE}).
+	\paragraph{} Oltre agli indici sulle chiavi primarie creati automaticamente dal sistema, l'utente può definire esplicitamente altri indici. L'istruzione che consente di fare ciò è la seguente:
+	\begin{lstlisting}
+	CREATE INDEX newIndex ON thisTable(attribute);
+	\end{lstlisting}
+	dove \texttt{newIndex} è il nome che diamo all'indice, e può essere scelto arbitrariamente, mentre \texttt{ON thisTable(attribute)} indica che stiamo creando un indice sull'attributo \texttt{attribute} della tabella \texttt{thisTable}. Questa istruzione, che non specifica alcun tipo particolare di indice, crea un indice B-tree. \\
+	Una volta creato l'indice, sarà il sistema a occuparsi del suo aggiornamento. Tuttavia, è opportuno lanciare il comando \texttt{ANALYZE} periodicamente per costringere il sistema ad aggiornare le statisiche relative alle tabelle e permettere così al \textit{query planner} di prendere decisioni più accurate.
+	\section{Tipi di indice}
+	PostgreSQL fornisce svariati tipi di indice: B-tree, Hash, GiST, SP-GiST e BRIN, ma in questo corso ci limiteremo solo allo studio di B-tree e Hash.\\Per specificare il tipo di indice che si vuole creare, si usa la seguente sintassi:
+	\begin{lstlisting}
+	CREATE INDEX idxName ON thisTable USING <INDEX_TYPE>(attribute)
+	\end{lstlisting}
+	dove \texttt{INDEX_TYPE} rappresenta, appunto, il tipo di indice desiderato.\\
+	Ricordiamo che, \textbf{a meno di una specifica diversa, PostgreSQL crea di default indici B-tree}.
+	\subsection{B-Tree} Gli indici B-tree sono adatti a gestire condizioni di uguaglianza e di range su dati in cui è possibile stabilire un ordine. Il \textit{query planner} cercherà di usare, se presente, un indice B-tree nei seguenti casi:
+	\begin{itemize}
+		\item l'attributo indicizzato è coinvolto in un confronto che usa gli operatori $ <, <=, =, >=, >$ o gli operatori complessi \texttt{BETWEEN} e \texttt{IN}.
+		\item l'attributo è coinvolto in un test \texttt{IS [NOT] NULL}
+		\item l'attributo è coinvolto in un test di \textit{pattern matching}, quindi si utilizza l'operatore \texttt{LIKE} o \texttt{SIMILAR TO}, ma \textbf{solo se il pattern è una costante o se riguarda l'inizio di una stringa}
+	\end{itemize}
+	Riguardo al caso del \textit{pattern matching}, occorre fare alcune precisazioni. \\Prima di tutto, quando si vuole creare un indice da usare in un'operazione di questo tipo e il database non supporta lo standard C locale, è bene utilizzare l'operatore \textcolor{blue}{\texttt{varchar_pattern_ops}}: in questo modo, i valori sono confrontati carattere per carattere e non secondo le regole imposte dal C locale.\\
+	Un \textit{locale} è un insieme di regole che stabiliscono in che modo rappresentare certi dati, ad esempio data, ora, importi monetari, rappresentazione di numeri decimali, etc.\\
+	Riguardo alle regole alfabetiche, i \textit{locale} dei vari paesi potrebbero usare convenzioni diverse, ad esempio per il tedesco le lettere maiuscole ([A..Z]) vengono prima delle lettere minuscole ([a..z]), mentre il contrario succede per l'italiano, e queste differenze diventano rilevanti quando si deve ricercare una stringa in un B-tree!\\
+	\begin{lstlisting}
+	CREATE INDEX indexName ON thisTable (attribute varchar_pattern_ops);
+	\end{lstlisting}
+	Inoltre, abbiamo precisato che ha senso creare un indice per il confronto tra stringhe solo se la stringa da confrontare è una costante oppure se è un \textit{pattern} che riguarda l'inizio della stringa. Questa limitazione è abbastanza ovvia, dato che per disporre un insieme di stringhe in ordine alfabetico si procede confrontano prima il primo carattere, su parità del primo carattere si confronta il secondo carattere, e così via; non conoscendo la parte iniziale delle stringhe, risulta evidente l'impossibilità di disporle in ordine alfabetico.
+	\paragraph{}Quando si usano gli indici hash, l'operatore \texttt{varchar_pattern_ops} non è necessario, perché questo tipo di indice viene usato solo per fare confronti di uguaglianza, quindi le stringhe vengono in ogni caso confrontate carattere per carattere.
+	\subsection{Hash Index} Gli hash index possono risultare utili per gestire semplici \textit{condizioni di uguaglianza}. La sintassi per creare un indice hash è:
+	\begin{lstlisting}
+	CREATE INDEX [<index_name>] ON <table_name> USING hash(<column_name>)
+	\end{lstlisting}
+	Questa sintassi viene utilizzata anche per definire qualunque indice che abbia un tipo diverso da B-tree.\\
+	Gli indici di tipo hash hanno un uso molto limitato in PostgreSQL perché possono essere usati solo per i confronti di uguaglianza. Inoltre, la gestione di questo tipo di indice è più complicata in una base di dati replicata o in caso di crash, quindi se ne sconsiglia l'uso.
+	\subsection{Indici multiattributo} Un indice può essere definito anche su più colonne (fino a 32) di una stessa tabella. Questo pratica risulta conveniente quando questi attributi sono spesso coinvolti in \textbf{congiunzioni di confronti}, ad esempio:
+	\begin{lstlisting}
+	SELECT I.nomeins , I.codiceins 
+	FROM Insegn I
+		JOIN InsErogato IE ON I.id = IE.id_insegn 
+	WHERE IE.annoaccademico = '2006/2007' AND IE.id_corsostudi = 4;
+	\end{lstlisting}
+	Notiamo che la condizione di selezione consiste in due confronti congiunti in un \texttt{AND}; in questo caso è vantaggioso creare il seguente indice multiattributo:
+	\begin{lstlisting}
+	CREATE INDEX idx_ie ON InsErogato(annoaccademico, id_corsostudi);
+	\end{lstlisting}
+	Questa istruzione genera un B-tree i cui nodi sono ordinati prima secondo l'attributo \texttt{annoacca-}\\ \texttt{demico}, poi secondo \texttt{id_corsostudi}. Deduciamo quindi che \textbf{nella definizione di indici multiattributo, l'ordine in cui vengono specificati gli attributi è rilevante!}\\
+	Il piano di esecuzione della query dopo la creazione dell'indice multiattributo è:
+	\begin{lstlisting}
+	Hash Join  (cost=280.22..315.57 rows=31 width=46)
+	  Hash Cond: (ie.id_insegn = i.id)
+	  ->  Index Scan using idx_ie on inserogato ie  (cost=0.42..35.34 rows=31 width=4)
+			Index Cond: (((annoaccademico)::text = '2006/2007'::text) AND (id_corsostudi = 4))
+	  ->  Hash  (cost=177.69..177.69 rows=8169 width=50)
+			->  Seq Scan on insegn i  (cost=0.00..177.69 rows=8169 width=50)
+		(6 rows)
+	\end{lstlisting}
+	La terza riga descrive il primo nodo figlio del piano di esecuzione e si può notare chiaramento l'utilizzo dell'indice multiattributo da noi creato.\\
+	Se avessimo creato due indici separati su ciascun attributo di \texttt{InsErogato}, ad esempio:
+	\begin{lstlisting}
+	CREATE INDEX idx_ie_aa ON InsErogato(annoaccademico);
+	CREATE INDEX idx_ie_cs ON InseErogato(id_corsostudi);
+	\end{lstlisting}
+	avremmo avuto un piano di esecuzione diverso:
+	\begin{lstlisting}
+	Hash Join  (cost=357.82..392.57 rows=31 width=46)
+	  Hash Cond: (ie.id_insegn = i.id)
+	  ->  Bitmap Heap Scan on inserogato ie  (cost=78.02..112.34 rows=31 width=4)
+			Recheck Cond: ((id_corsostudi = 4) AND ((annoaccademico)::text = '2006/2007'::text))
+			->  BitmapAnd  (cost=78.02..78.02 rows=31 width=0)
+				  ->  Bitmap Index Scan on idx_ie_cs  (cost=0.00..6.49 rows=425 width=0)
+						Index Cond: (id_corsostudi = 4)
+				  ->  Bitmap Index Scan on idx_ie_aa  (cost=0.00..71.26 rows=4955 width=0)
+						Index Cond: ((annoaccademico)::text = '2006/2007'::text)
+	  ->  Hash  (cost=177.69..177.69 rows=8169 width=50)
+			->  Seq Scan on insegn i  (cost=0.00..177.69 rows=8169 width=50)
+	(11 rows)
+	\end{lstlisting}
+	Si il primo nodo figlio dell'albero (sesta riga), chiamato \textcolor{blue}{\texttt{BitmapAnd}}: la presenza di questo nodo sta a significare che nel piano di esecuzione si fa la congiunzione tra i risultati ottenuti da due sottonodi. Nel nostro caso, prima si selezionano i blocchi contenenti le righe con \texttt{id_corsostudi = 4} usando l'indice \texttt{idx_ie_cs}, dopodiché si selezionano i blocchi contenenti le righe con \texttt{annoaccademico = '2009/2010'} usando l'indice \texttt{idx_ie_aa}.\\
+	Una volta fatto ciò, il nodo \textcolor{blue}{\texttt{BitmapAnd}} fa la congiunzione (l'operazione logica di \texttt{AND}) tra i risultati dei due nodi.
+	\paragraph{}Non sempre però è possibile creare indici multiattributo per aumentare le prestazioni di esecuzione: quando la condizione di selezione consiste in una \textit{disgiunzione} di condizioni, conviene creare indici distinti.
+	\begin{lstlisting}
+	SELECT I.nomeins , I.codiceins 
+	FROM Insegn I
+		JOIN InsErogato IE ON I.id = IE.id_insegn 
+	WHERE IE.annoaccademico = '2006/2007' OR IE.id_corsostudi = 4;
+	\end{lstlisting}
+	In questo caso, un indice multiattributo mi aiuterebbe a trovare solo le tuple che soddisfano \texttt{IE.annoaccademico = '2006/2007' AND IE.id_corsostudi = 4}, ma poi dovrei effettuare un altro tipo di ricerca per includere anche quelli che soddisfano solo \texttt{IE.annoaccademico = '2006/2007'} oppure \texttt{IE.id_corsostudi = 4}.\\Come regola generale, quindi, \textbf{gli indici multiattributo vanno creati solo se la condizione di selezione riguarda una congiunzione di confronti che coinvolge attributi diversi.}
+	\paragraph{}Un indice multiattributo di tipo B-tree è più  efficiente quando le condizioni più stringenti riguardano i primi attributi specificati nell'indice. Ad esempio, se la query contiene una selezione del tipo:
+	\begin{lstlisting}
+	WHERE a = 5 AND b >= 42 AND c < 77
+	\end{lstlisting}
+	nell'indice conviene specificare prima la colonna \texttt{a}:
+	\begin{lstlisting}
+	CREATE INDEX idx ON myTable(a, b, c)
+	\end{lstlisting}
+	L'indice verrà scansionato a partire dalla prima tupla che ha \texttt{a = 5} e \texttt{b = 42}, fino all'ultima tupla con \texttt{a = 5}. Tutte le tuple con \texttt{c >= 77} non verranno inserite nel risultato, ma comunque verranno analizzate. (chiedere chiarimenti su questa parte)  
+	\section{Analisi di utilizzo degli indici}
+	Abbiamo già spiegato che, se opportunamente definiti, gli indici possono aumentare di molto le prestazioni del DBMS, ma è importante definirli con criterio, in quanto occupano una quantità di memoria non indifferente e devono essere mantenuti aggiornati. PostgreSQL permette di analizzare il piano di esecuzione di una query grazie al comando \texttt{EXPLAIN query}, che ci permette anche di vedere quali indici sono effettivamente utilizzati durante la query e quali no, oppure quali operazioni potrebbero essere ottimizzate.\\
+	Il \textit{piano di esecuzione} di una query è un albero di nodi di esecuzione, le cui foglie sono "nodi di scansione": l'esecuzione di questi nodi restituisce gli indirizzi delle righe di una tabella.\\
+	In PostgreSQL, l'output mostra una riga per ciascun nodo dell'albero dove si indica il tipo di operazione e una stima del costo di esecuzione. La prima riga dell'output rappresenta il nodo radice e contiene la stima del costo totale di esecuzione della query, ed è proprio questo il costo che l'ottimizzatore tenta di minimizzare.\\
+	\begin{tcolorbox}[enhanced jigsaw, breakable,title=Esempio, title filled]
+	Questa query
+	\begin{lstlisting}
+	EXPLAIN SELECT IE.id
+	FROM InsErogato IE
+		JOIN CorsoStudi CS ON IE.id_corsostudi = CS.id
+	WHERE IE.annoaccademico = '2013/2014' AND 
+		CS.nome = 'Laurea in Informatica';
+	\end{lstlisting}
+	produce il seguente piano di esecuzione:
+	\begin{lstlisting}
+	Nested Loop  (cost=0.00..6131.59 rows=8 width=4)
+	Join Filter: (ie.id_corsostudi = cs.id)
+		->  Seq Scan on corsostudi cs  (cost=0.00..96.94 rows=1 width=4)
+	Filter: ((nome)::text = 'Laurea in Informatica'::text)
+		->  Seq Scan on inserogato ie  (cost=0.00..5970.21 rows=5155 width=8)
+	Filter: ((annoaccademico)::text = '2013/2014'::text)
+	\end{lstlisting}
+	\end{tcolorbox}
+	Il nodo radice ci dice che il join viene eseguito con la tecnica \textit{Nested Loop} (per i dettagli, si vedano le dispense di teoria). Inoltre, sono presenti tre campi che ci forniscono ulteriori informazioni:
+	\begin{itemize}
+		\item \texttt{cost} rappresenta una \textit{stima} del costo di esecuzione della query, in termini di accessi a memoria secondaria
+		\item \texttt{rows} è il numero totale di righe che fanno parte del risultato
+		\item \texttt{width} è una misura della dimensione di ogni riga in byte
+	\end{itemize}
+	Subito sotto al nodo radice troviamo la dicitura \texttt{Join Filter}, che ci dice su quali attributi viene fatto il join.\\
+	Tutti gli altri nodi (introdotti da una freccia \texttt{->}) presentano un certo grado di indentazione, che indica sostanziamente il livello di profondità a cui si trovano. \\Il primo nodo che incontriamo è \texttt{Seq Scan on corsostudi cs}, ci dice che è stata fatta una scansione sequenziale della tabella \texttt{corsostudi} ed è stato applicato un certo filtro sull'attributo \texttt{nome}.\\ Più in basso c'è il nodo \texttt{Seq Scan on inserogato ie}, che dichiara una scansione sequenziale della tabella \texttt{inserogato} con un filtro su \texttt{annoaccademico}.
+	\paragraph{}Un modo per ottimizzare la query è quello di rimuovere, quando possibile, le scansioni sequenziali. Nel caso specifico di questa query, un'idea potrebbe essere quella di creare due indici su \texttt{inserogato(annoaccademico)} e su \texttt{corsostudi(nome)}:
+	\begin{lstlisting}
+	CREATE INDEX idx_ie_aa ON inserogato(annoaccademico);
+	CREATE INDEX idx_cs_nome ON corsostudi(nome);
+	
+	EXPLAIN SELECT IE.id
+	FROM InsErogato IE
+		JOIN CorsoStudi CS ON IE.id_corsostudi = CS.id
+	WHERE IE.annoaccademico = '2013/2014' AND 
+		CS.nome = 'Laurea in Informatica';	
+	\end{lstlisting}
+	La prima riga del piano di esecuzione è:
+	\begin{lstlisting}
+	Hash Join  (cost=65.97..3641.10 rows=8 width=4)
+	...
+	\end{lstlisting}
+	Gli accessi sono quasi dimezzati, 3641 rispetto ai 6131 di prima! \\Si noti che in questo caso non è possibile creare un indice multiattributo perchè gli attributi su cui si fa la selezione appartengono a tabelle diverse.\\
+	Nel piano di esecuzione sono presenti anche delle righe che ci confermano che gli indici sono stati utilizzati!
+	\begin{lstlisting}
+	...
+	->  Bitmap Heap Scan on inserogato ie  (cost=63.47..3619.19 rows=5155 width=8)
+		Recheck Cond: ((annoaccademico)::text = '2013/2014'::text)
+	->  Bitmap Index Scan on idx_ie_aa  (cost=0.00..62.18 rows=5155 width=0)
+		Index Cond: ((annoaccademico)::text = '2013/2014'::text)
+	\end{lstlisting}
+	Analizziamo più nel dettaglio i nodi:
+	\begin{itemize}
+		\item \textcolor{blue}{\texttt{Bitmap Index Scan on idx_ie_aa}} ci dice che è stata eseguita una scansione dell'indice \texttt{idx_ie_aa},
+		sulla condizione specificata appena sotto da \texttt{Index Cond}. \\Questa operazione non restituisce le righe, bensì gli \textbf{indirizzi} dei blocchi in cui si trovano tutte le righe che potrebbero potenzialemente far parte del risultato.
+		\item \textcolor{blue}{\texttt{Bitmap Heap Scan on inserogato ie}} ci dice che il "mucchio" (\textit{heap}) di indirizzi restituiti dal nodo precedente viene scansionato, ricontrollando la condizione sull'anno accademico (\texttt{Recheck Cond: ...})
+	\end{itemize}
+	Il nodo \texttt{Bitmap Heap Scan}, inoltre, ordina \textit{fisicamente} gli indirizzi delle righe trovati prima di leggerli, per minimizzare il tempo di estrazione delle righe. La parola \textit{"bitmap"} indica il meccanismo che esegue l'ordinamento.
+	Perché viene fatto un \textit{recheck} della condizione sull'anno accademico? Perché il nodo precedente resituisce solo gli indirizzi dei \textit{blocchi} in cui si trovano le righe che potrebbero far parte del risultato! All'interno di un blocco potrebbero trovarsi anche delle righe che non rispettano la condizione specificata, quindi una volta ottenuti i blocchi di interesse bisogna ri-analizzare le singole righe.
+	\section{Criteri per creare indici}
+	In generale, conviene sempre creare degli indici su: 
+	\begin{itemize}
+		\item attributi di \textit{join}
+		\item attributi di \textit{selezione} (presenti nella clausola \texttt{WHERE})
+	\end{itemize}
+	Ricordiamo che, al momento della creazione di una tabella, il sistema crea automaticamente degli indici su tutti gli attributi dichiarati \texttt{PRIMARY KEY} o \texttt{UNIQUE}, quindi in questo caso non è necessario ricrearli.\\
+	I criteri per creare degli indici utili variano anche a seconda della tecnica di join utilizzata (che si può conoscere tramite il comando \texttt{EXPLAIN}). 
+	\paragraph{Nested Loop Join} Esegue il join A$\Join$B come due cicli \texttt{for} innestati, quello più esterno scorre tutte le righe di A mentre quello più interno scorre le righe di B.\vspace{10px}
+	\begin{tcolorbox}[enhanced jigsaw, breakable, title=Pseudocodice, title filled]
+	Supponiamo che \texttt{table1} sia la tabella esterna e \texttt{table2} la tabella interna.\\
+	Supponiamo inoltre che il join sia fatta sia fatto sulla condizione \texttt{table1.a = table2.b}
+	\begin{lstlisting}
+	for row in table1{
+		for row in table2{
+			if(table1.a = table2.b){
+				add row to result
+			}
+		}
+	}
+	\end{lstlisting}
+	\end{tcolorbox}
+	Questa tecnica di join è applicabile a qualunque situazione ed è la più semplice, ma non sempre è la più efficiente: la complessità computazionale di due cicli \texttt{for} innestati è molto alta, quindi per tabelle molto grandi l'esecuzione può essere molto lenta.\\
+	In questo caso, valgono le due regole generali di ottimizzazione dichiarate sopra.
+	\paragraph{Merge Scan Join} È una tecnica che richiede di avere le tabelle ordinate secondo l'attributo di join; questo è si verifica se:
+	\begin{itemize}
+		\item le tabelle sono \textit{fisicamente} ordinate
+		\item esistono degli indici che permettono di accedere in modo ordinato alle righe delle tabelle
+	\end{itemize}
+	Di solito viene adottato quando nella query sono presenti le clausole \texttt{ORDER BY}, \texttt{DISTINCT} o \texttt{GROUP BY}\footnote{Ricordiamo che per effettuare l'eliminazione dei duplicati e i raggruppamenti è necessario eseguire prima un ordinamento sulla tabella.}. \\Il sistema può decidere di applicare il Merge Join anche su tabelle inizialmente non ordinate, ma in questo caso un overhead per eseguire l'ordinamento fisico delle tabelle prima di effettuare il join.
+	\begin{tcolorbox}[enhanced jigsaw, breakable, title=Esempio: piano di esecuzione di un Merge Join, title filled]
+	\begin{lstlisting}
+	EXPLAIN SELECT * 
+	FROM t1 , t2
+	WHERE t1.unique1 < 100 AND t1.unique2 = t2.unique2;
+	
+							QUERY PLAN
+	--------------------------------------------------------
+	Merge Join (cost=198.11..268.19 ROWS=10 width=488)
+		Merge Cond: (t1.unique2 = t2.unique2)
+		-> INDEX Scan USING t1_unique2 ON t1 (cost=0..656 ROWS=101..)
+			Filter: (unique1 < 100)
+		-> Sort (cost=197.83..200.33 ROWS=1000..)
+			Sort KEY: t2.unique2
+			-> Seq Scan ON t2 (cost=0.00..148.00 ROWS=1000..)
+	\end{lstlisting}
+	Notiamo che la tabella \texttt{t1} è già ordinata via indice: questo si può desumere dalla terza riga del piano di esecuzione, in cui si dice che viene fatta un \texttt{INDEX Scan} su \texttt{t1} usando l'indice \texttt{t1_unique2}. Questa scansione, quindi, non è ulteriormente ottimizzabile.\\\\
+	La tabella \texttt{t2}, invece, non era ordinata al momento dell'esecuzione della query: questo si può desumere dal fatto che l'altro nodo figlio (quinta riga) dichiara un nodo \textcolor{blue}{\texttt{Sort}} sull'attributo \texttt{unique2} di \texttt{t2}. Possiamo ottimizzare la query creando un indice su \texttt{t2.unique} ed eliminando così il \texttt{Seq Scan} (ultima riga) necessario per eseguire l'ordinamento
+	\end{tcolorbox}
+	\paragraph{Hash Based Join} Può essere applicato nel caso di \textit{equi-join} (che rappresentano peraltro un caso molto frequente: il join viene fatto testando una condizione di uguaglianza su attributi non comuni). \\Viene creata una funzione hash sugli attributi di join, quindi la tabella esterna viene interamente scansionata e le sue righe vengono inserite in una tabella hash. La stessa cosa viene fatta sulla tabella interna. Per verificare l'uguaglianza sugli attributi di join si verifica l'uguaglianza dei valori prodotti dalla funzione hash.\vspace{10px}
+	\begin{tcolorbox}[enhanced jigsaw, breakable, title=Esempio: piano di esecuzione di un Hash Join, title filled]
+	\begin{lstlisting}
+	EXPLAIN SELECT * 
+	FROM Insegn I 
+		JOIN Inserogato IE ON ie.id_insegn=i.id 
+	WHERE ie.annoaccademico='2013/2014';
+	
+									QUERY PLAN
+	------------------------------------------------------------------
+	Hash Join (cost=287.80..6328.90 ROWS=5155 width=641)
+		Hash Cond: (ie.id_insegn = i.id)
+		-> Seq Scan ON inserogato ie (cost=0.00..5970.21 ROWS=5155
+			w=578)
+			Filter: ((annoaccademico)::TEXT = '2013/2014'::TEXT)
+		-> Hash (cost=185.69..185.69 ROWS=8169 width=63)
+			-> Seq Scan ON insegn i (cost=0.00..185.69 ROWS=8169 w=63)
+	\end{lstlisting}
+	Il nodo \textcolor{blue}{\texttt{Hash}} prepara una hash table scansionando sequenzialmente la tabella \texttt{insegn i}.\\
+	In questo caso, lo scan sequenziale non si può ottimizzare poiché dobbiamo calcolare il valore hash di tutte le righe della tabella. Eventualmente, se la clausola \texttt{WHERE} contiene una selezione sulle righe della tabella (in questo caso, sulle righe di \texttt{insegn}), si può creare un indice sull'attributo di selezione.\\\\
+	Il nodo \textcolor{blue}{\texttt{Hash Join}} effettua il join vero e proprio: per ogni riga fornita dal primo figlio (\texttt{Seq Scan}), cerca nel secondo figlio (\texttt{Hash}) la riga da unire secondo la condizione di join.\\
+	Dato che c'è una condizione di selezione sulla tabella \texttt{inserogato}, possiamo ottimizzare lo scan sequenziale creando un indice sull'attributo di selezione (\texttt{annoaccademico})
+	\end{tcolorbox}
+	\chapter{Introduzione al controllo della concorrenza}
+	In questo capitolo descriveremo il comportamento di PostgreSQL quando due o più transazioni agiscono sui dati in modo concorrente. Sappiamo che tra le proprietà ACID di una transazione c'è anche l'\textbf{isolamento}, quindi l'esecuzione di una transazione deve essere rappresentare un "compartimento stagno", non deve essere influenzata dall'esecuzione di altre transazioni. \\L'obiettivo del controllo della concorrenza è pertanto quello di permettere un accesso efficiente per tutte le transazioni attive garantendo allo stesso tempo l'integrità dei dati, evitando cioè il manifestarsi di determinate anomalie.\\Le possibili anomalie che si possono manifestare sono:
+	\begin{itemize}
+		\item \textbf{lettura sporca} (\textit{dirty read}): una transazione legge i dati scritti da un'altra transazione che non ha effettuato il \texttt{commit}
+		\item \textbf{letture inconsistenti} (\textit{non-repeatable read}): una transazione che ripete una lettura degli stessi dati in istanti diversi osserva dei cambiamenti negli stessi, dovuti a una transazione che li ha modificati e ha effettuato il \texttt{commit}
+		\item \textbf{aggiornamento fantasma} (\textit{phantom read}): una transazione esegue una query che restituisce un insieme di righe che dovrebbero soddisfare una certa condizione, ma questo insieme è cambiato poiché un'altra transazione nel frattempo ha modificato i dati relativi alla condizione.
+		\item \textbf{mancata serializzazione} (\textit{serialization anomaly}): il risultato di un gruppo di transazioni (nessun abort) non è compatibile con alcun ordine di esecuzione seriale delle stesse.
+	\end{itemize}
+	\paragraph{}PostgreSQL riesce a mantenere la consistenza dei dati utilizzando il modello \textit{Multiversion Concurrency Control, MVCC}, che risulta essere meno restrittivo ma ugualmente efficace rispetto al Locking a due fasi (2PL).\\
+	La differenza principale tra i due approcci è che nel modello MVCC i lock acquisiti per interrogare la base di dati non vanno in conflitto con i lock acquisiti per scrivere i dati. Di conseguenza, la lettura non blocca mai la scrittura, la scrittura non blocca mai la lettura, \textbf{ma una scrittura può bloccare un altra scrittura!}\footnote{Dalla doc: \textit{The main advantage to using the MVCC model of concurrency control rather than locking is that in MVCC locks acquired for querying (reading) data do not conflict with locks acquired for writing data, and so reading never blocks writing and writing never blocks reading.} (link: https://www.postgresql.org/docs/8.3/mvcc-intro.html)}\\
+	Il funzionamento del modello MVCC si basa sul concetto di snapshot:
+	\begin{quotation}
+		Ogni transazione vede uno \textit{snapshot} dello stato della base di dati in un certo istante. Le letture su questa istantanea sono sempre possibili e non sono mai bloccate anche se ci sono altre transazioni che stanno modificando la base di dati.
+	\end{quotation}
+	Questo impedisce ai comandi di visualizzare dati inconsistenti prodotti da transazioni concorrenti che eseguono inserimenti, cancellazioni o aggiornamenti.
+	\section{Livelli di isolamento}
+	I cinque livelli di isolamento messi a disposizione da PosgreSQL sono, in ordine decrescente di isolamento:
+	\begin{itemize}
+		\item \textbf{Serializable}, garantisce l'intera transazione sia eseguita in qualche ordine sequenziale rispetto ad altre transazioni. C'è un completo isolamento da tutte le transazioni concorrenti
+		\item \textbf{Repeatable Read}, garantisce che i dati letti durante la transazione non cambieranno a causa di altre transazioni: rifacendo la lettura dei medesimi dati, si ottengono sempre gli stessi
+		\item \textbf{Read Committed}: garantisce che qualunque \texttt{SELECT} di una transazione vede solo i dati confermati (\texttt{COMMITTED}) prima che la \texttt{SELECT} inizi. \\È il livello di isolamento di default usato da PostgreSQL.
+		\item \textcolor{crimson}{\textbf{Read Uncommitted}}: livello messo a disposizione perché previsto dallo standard SQL, ma è implementato come Read Committed. Quindi, di fatto, \textcolor{crimson}{questo livello non esiste!}
+	\end{itemize}	
+	Di seguito proponiamo uno schema dei possibili livelli di isolamento insieme alle anomalie che riescono a impedire:\vspace{10px}\\
+	\begin{tabular}{|l l l l l|}
+		\hline
+		\makecell[l]{Livello di\\ isolamento} & Dirty Read & \makecell[l]{Nonrepeatable \\Read} & \makecell[l]{Phantom\\ Read}& \makecell[l]{Serialization\\Anomaly}\\
+		\hline
+		Serializable & No & No & No & No\\
+		Repeatable Read & No & No & Sì, ma non in PG & Sì\\
+		Read Committed & No & Sì & Sì & Sì\\
+		Read Uncommitted & Sì, ma non in PG & Sì & Sì & Sì\\
+		\hline
+	\end{tabular}\vspace{10px}\\
+	Si può imporre che una transazione esegua con un certo livello di isolamento tramite la seguente istruzione:
+	\begin{lstlisting}
+	BEGIN;
+	SET TRANSACTION ISOLATION LEVEL <LEVEL>
+	...
+	COMMIT;
+	\end{lstlisting}
+	dove \texttt{<LEVEL>} deve essere sostituito dalle keyword \texttt{REPEATABLE READ} o \texttt{SERIALIZABLE}. Tecnicamente è possibile anche scrivere \texttt{READ COMMITTED}, ma è inutile visto che questo è il livello implementato di default. \\
+	\subsection{Read Committed}
+	È il livello di default, quindi non ha bisogno di essere specificato tramite un \texttt{SET TRANSACTION ISOLATION LEVEL}.\\
+	L'unico caso in cui l'istantanea dei dati visibili alla transazione può cambiare è quando un'altra transazione concorrente effettua il \texttt{commit} delle sue modifiche. Prima del \texttt{commit}, l'istantanea rimane immutata.
+	\paragraph{Nonrepeatable Read} Una delle anomalie possibili con questo livello di isolamento è la lettura inconsistente: supponiamo di avere due transazioni concorrenti, T1 che effettua una modifica sulla base di dati, T2 che effettua due \texttt{SELECT} distinte sui dati. Se T2 esegue una lettura e poi T1 effettua la modifica ed fa il \texttt{commit} \textit{prima} della successiva lettura di T1, allora T1 vedrà vedrà due istantanee diverse in momenti diversi.\\
+	\paragraph{Phantom Read} L'aggiornamento fantasma si verifica se, come prima, abbiamo due transazioni concorrenti, di cui una (diciamo T1) esegue due letture diverse \textit{con condizione}, mentre l'altra (diciamo T2) esegue una modifica sugli stessi dati.
+	Supponiamo che T1 inizi e selezioni un certo sottoinsieme di righe che soddisfano una certa condizione; successivamente T2 inizia ed esegue delle modifiche che coinvolgono anche alcune delle righe precedentemente selezionate da T1. Quando T2 effettua il \texttt{commit}, T1 dovrà ricontrollare le righe \textit{che aveva precedentemente selezionato}\footnote{Quindi il recheck riguarda solo un certo sottoinsieme righe! Se a causa della modifica altre righe, non considerate dalla \texttt{SELECT} precedente, soddisfano il vincolo, non verranno comunque incluse nel risultato finale.} per verificare che soddisfino ancora le condizioni.
+	\paragraph{Modifiche in conflitto} Se la modifica della transazione T1 riguarda dei dati su cui sta agendo nello stesso momento un'altra transazione T2, \textit{e le due modifiche sono in conflitto} (ad esempio, entrambe tentano di aggiungere la stessa tupla), allora T1 viene messa \textit{in attesa}. La decisione di far continuare T1 o no dipende dall'esito di T2: se T2 effettua un \texttt{commit}, T1 viene abortita, perché la sua modifica andrebbe in conflitto con quella di T2; se invece T2 sceglie un \texttt{rollback}, allora T1 può continuare!\\ 
+	Si noti che la transazione viene sospesa solo se le due modifiche non possono coesistere nella base di dati! Invece, se le modifiche effettuate non minacciano l'integrità dei dati (ad esempio, se T1 e T2 aggiungono due tuple diverse e tutti i vincoli vengono rispettati), nessuna delle due viene messa in attesa e le modifiche possono essere rese effettive senza dover aspettare il \texttt{commit} dell'altra transazione.
+	\subsection{Repeatable Read}
+	Con il livello di isolamento Repeatable Read, l'istantanea dei dati su cui lavora la transazione non cambia mai durante l'esecuzione. Qualunque modifica (seguita da \texttt{commit} o no) effettuata da un'altra transazione concorrente è invisibile, gli unici cambiamenti che possono essere percepiti sono quelli effettuati all'interno della stessa transazione.\\
+	Questo evidentemente impedisce il presentarsi di anomalie quali lettura sporca, letture inconsistenti e aggiornamento fantasma. L'unica anomalia concessa è la mancata serializzazione.
+	\paragraph{}Se una transazione T1, che lavora con il livello di isolamento Repeatable Read, tenta di modificare dei dati in contemporanea con un'altra transazione T2 che ha cominciato le sue modifiche prima, allora si adotta il seguente protocollo:
+	\begin{enumerate}
+		\item T1 viene messa in attesa finché T2 non ha deciso il suo esito
+		\item se T2 effettua un \textcolor{blue}{\texttt{rollback}}, allora l'istantanea di T1 è consistente con lo stato reale della base di dati, quindi a T1 è concesso di portare a termine la sua modifica
+		\item se T2 effettua un \textcolor{blue}{\texttt{commit}}, allora l'istantanea di T1 non è più consistente con lo stato reale della base di dati, quindi le modifiche che vorrebbe effettuare rischiano di danneggiare l'integrità dei dati. Per questo motivo, a T1 non è concesso di proseguire e si presenta il seguente errore:
+		\begin{lstlisting}
+		ERROR: could NOT serialize access due TO concurrent UPDATE.
+		\end{lstlisting}
+		a indicare che non è stato possibile serializzare l'accesso ai dati da parte delle due transazioni. T1 è costretta a fare un \texttt{rollback} e quando ritenterà la sua modifica vedrà i dati come modificati da T2.
+	\end{enumerate} 
+	Si noti che nel caso di \texttt{READ COMITTED} le transazioni non vengono messe in attesa a meno che le operazioni che vogliono fare non siano in conflitto.\\
+	Nel livello \texttt{REPEATABLE READ} \textit{qualunque tentativo di modifica} da parte di una transazione sui dati condivisi con un'altra transazione porta alla sospensione della transazione che ha iniziato dopo. La modifica potrà essere portata a termine solo se la transazione che bloccava l'altra effettua un \texttt{rollback}, anche se queste modifiche non sono in conflitto tra loro!
+	\subsection{Serializable}
+	L'esecuzione di un certo gruppo di transazioni concorrenti si dice \textit{serializzabile} se il risultato dell'esecuzione appare come se le transazioni avessero eseguito in qualche ordine seriale.\\
+	Il livello di isolamento \textcolor{blue}{\texttt{SERIALIZABLE}} è il più stringente in assoluto e riesce a catturare anche l'anomalia di mancata serializzazione: quando due (o più) transazioni concorrenti effettuano il \texttt{commit}, il sistema verifica che il risultato ottenuto sia compatibile con una qualche esecuzione seriale. Se ciò non dovesse essere possibile, viene lanciato il seguente errore:
+	\begin{lstlisting}
+	ERROR:  could not serialize access due to read/write dependencies among transactions
+	\end{lstlisting}
+	Nella maggior parte dei casi, l'anomalia di mancata serializzazione si verifica quando due transazioni vogliono modificare dei dati basandosi sugli stessi valori che devono modificare!\vspace{10px}
+	\begin{tcolorbox}[enhanced jigsaw, breakable, title filled, title=Esempio: anomalia di mancata serializzazione]
+	Supponiamo di avere una tabella \texttt{myTable} con un unico attributo, \texttt{x}.\\Vengono eseguite le seguenti transazioni:\vspace{10px}\\
+	\begin{tabular}{l l}
+	\begin{lstlisting}
+1 BEGIN TRANSACTION 
+  ISOLATION LEVEL REPEATABLE READ; 
+2 INSERT INTO myTable(x) 
+  SELECT MAX(x)+1 FROM myTable; 
+  INSERT 0 1
+3
+4 COMMIT;
+	\end{lstlisting}
+	&
+	\begin{lstlisting}
+BEGIN TRANSACTION 						1
+ISOLATION LEVEL REPEATABLE READ;
+									 	2
+INSERT INTO myTable(x) 					3
+SELECT MAX(x)+1 FROM myTable; 		 
+INSERT 0 1
+COMMIT;								 	4
+	\end{lstlisting}
+	\end{tabular}\vspace{10px}\\
+	Supponendo che il valore massimo contenuto nella tabella sia 10, una qualunque esecuzione seriale delle due transazioni porterebbe all'inserimento di due righe, una con valore 11 e l'altra con valore 12.\\
+	In questo caso, invece, inseriscono entrambe 11! Il risultato ottenuto non è consistente con nessun ordine di esecuzione seriale. Se eseguissimo queste transazioni imponendo il livello di isolamento \texttt{SERIALIZABLE}, verrebbe sollevato un errore.
+	\end{tcolorbox}
+	\chapter{Interazione tra Python e PostgreSQL}
+	È possibile interagire con una base di dati PostgreSQL tramite un programma Python grazie alla libreria \textcolor{blue}{\texttt{psycopg2}}, che implementa la API ufficiale di Python \textcolor{blue}{\texttt{DB-API 2.0}} per l'interazione dei programmi Python con basi di dati esterne.
+	\\\texttt{psycopg2} è una libreria scritta quasi completamente in C che implementa i cursori lato server e lato client, comunicazioni asincrone, notifiche e il comando \texttt{COPY}.
+	\section{Connessione alla base di dati}
+	\lstset{
+		language=Python,
+		aboveskip=3mm,
+		belowskip=3mm,
+		showstringspaces=false,
+		columns=flexible,
+		basicstyle={\small\ttfamily},
+		numbers=none,
+		numberstyle=\tiny\color{gray},
+		keywordstyle=\color{blue},
+		commentstyle=\color{dkgreen},
+		stringstyle=\color{mauve},
+		breaklines=true,
+		breakatwhitespace=true,
+		tabsize=4
+	}
+	L'accesso alla base di dati si effettua tramite un oggetto \texttt{Connection}. Il metodo \textcolor{blue}{\texttt{connect()}} è un metodo statico di \texttt{psycopg2} che accetta i parametri necessari per stabilire la connessione, ovvero: l'indirizzo dell' \textcolor{blue}{\texttt{host}}, il nome del \textcolor{blue}{\texttt{database}}, il nome dello \textcolor{blue}{\texttt{user}} e la sua \textcolor{blue}{\texttt{password}}:
+	\begin{lstlisting}
+	connector = psycopg2.connect(host="dbserver.scienze.univr.it", \
+	database="db0", user="user0", password="xxx" )
+	\end{lstlisting}
+	Si noti che in Python è possibile passare i parametri attuali specificando i parametri formali a cui si riferiscono, in modo da non doversi necessariamente ricordare l'ordine in cui vanno passati.\\
+	\paragraph{} All'oggetto \texttt{connector} possono essere applicati i seguenti metodi:
+	\begin{itemize}
+		\item \textcolor{blue}{\texttt{cursor()}}: ritorna un \textit{cursore} per la base di dati. Un oggetto cursore permette di inviare comandi SQL al DBMS e di accedere al risultato delle query. Verrà approfondito nella sezione 1.2
+		\item \textcolor{blue}{\texttt{commit()}}: effettua il \texttt{commit} della transazione corrente. Di default, \texttt{psycopg2} apre automaticamente una transazione nel momento in cui viene inviato il primo comando. Se non viene effettuato il \texttt{commit} esplicitamente prima di chiudere la connessione, tutte le modifiche vanno perse.
+		\item \textcolor{blue}{\texttt{rollback()}}: abortisce la transazione corrente
+		\item \textcolor{blue}{\texttt{close()}}: chiude la connessione corrente. Se non è stato effettuato il \texttt{commit}, implica un \texttt{rollback} delle operazioni non registrate.
+	\end{itemize}
+	Inoltre è possibile accedere o modificare alcune proprietà:
+	\begin{itemize}
+		\item \textcolor{blue}{\texttt{autocommit}}: se impostata a \texttt{True}, ogni comando inviato è una transazione isolata, quindi viene eseguito il \texttt{commit} di ogni comando. Il valore di default è \texttt{False} e implica che il termine di una transazione debba essere dichiarato esplicitamente dal programmatore tramite un \texttt{commit} o un \texttt{rollback}. Impostare a \texttt{True} questa proprietà è buona pratica quando si hanno programmi molto lunghi, per evitare di lasciare la sessione nello stato \textit{"idle in transaction"}.
+		\item \textcolor{blue}{\texttt{readonly}}: se impostata a \texttt{True}, permette di inviare solo comandi di interrogazione (\texttt{SELECT}) ma non comandi DDL o DML. Questa proprietà è utile quando si sa a priori che non si invieranno comandi di definizione/modifica dei dati; impostare \texttt{readonly = True} ottimizza la connessione (...)
+		\item \textcolor{blue}{\texttt{isolation_level}}: modifica il livello di isolamento per la prossima transazione. I valori leciti sono: \texttt{'READ UNCOMMITTED', 'READ COMMITTED', 'REPEATABLE READ', 'SERIALIZABLE', 'DEFAULT'}. È preferibile assegnare questa variabile subito dopo la crazione di una connessione.
+		\item \textcolor{blue}{\texttt{status}}: è una proprietà \textit{read-only} (!) che rappresenta lo stato della connessione. È indefinito per connessioni chiuse.
+	\end{itemize}
+	L'impostazione di una certa proprietà si effettua con una sintassi di questo tipo:
+	\begin{lstlisting}
+	connector.isolation_level = 'REPEATABLE READ'
+	connector.autocommit = 'True'
+	\end{lstlisting}
+	È possibile creare una connessione tramite la parola chiave \textcolor{blue}{\texttt{with}}:
+	\begin{lstlisting}
+	with psycopg2.connect(...) as connector:
+	...
+	\end{lstlisting}
+	dove l'identificatore dopo \texttt{as} sarà il nome dell'oggetto e i comandi da inviare al DBMS dovranno essere scritti all'interno del blocco.\\Il vantaggio di usare questa notazione è che la connessione viene automaticamente chiusa all'uscita dal blocco, quindi non c'è bisogno di usare il metodo \texttt{close()}.
+	\section{Cursore}
+	Il cursore è un oggetto che gestisce l'interazione con la base di dati, si crea con l'istruzione \texttt{connector.cursor()}. Se il comando inviato è una query, il risultato verra memorizzato all'interno del cursore.
+	\paragraph{}Il cursore è legato a una certa connessione per tutta la durata della sua vita. I cursori creati all'interno di una stessa sessione non sono isolati: ogni modifica del database effettuata da un cursore è immediatamente visibile a tutti gli altri cursori. I cursori che invece appartengono a sessioni diverse possono essere isolati oppure no, in base al livello di isolamento impostato. 
+	\paragraph{}I metodi da applicare al cursore per l'esecuzione di comandi sono:
+	\begin{itemize}
+		\item \textcolor{blue}{\texttt{execute(<comando> [, <parametri>])}}: prepara ed esegue il comando SQL usando i parametri indicati, che \textbf{devono essere passati come tupla o come dict!}. Il metodo ritorna \texttt{None} ed evenutali risultati si possono ricavare dal cursore applicando i metodi \texttt{fetchone()} o \texttt{fetchmany()}.\\ \\
+		Esempio di query "statica" (senza parametri):
+		\begin{lstlisting}
+		cur.execute("CREATE TABLE test (id INTEGER PRIMARY KEY, num NUMERIC, data VARCHAR)")
+		\end{lstlisting}
+		Esempio di query "dinamica" (con parametri):
+		\begin{lstlisting}
+		cur.execute("INSERT INTO test (id, num, data) VALUES (%s, %s, %s)", (100, 18.50, 'abc'))
+		\end{lstlisting}
+		\item \textcolor{blue}{\texttt{executemany(<comando>, <lista di parametri>)}}: prepara ed esegue un comando SQL per ciascun valore nella lista di parametri:
+		\begin{lstlisting}
+		cur.execute("INSERT INTO test (id, num, data) VALUES (%s, %s, %s)", (100, 18.50, 'abc'), (68, 12.00, 'bar'), (14, 30, 'tree'))
+		\end{lstlisting}
+		Questo comando è pensato per fare più volte lo stesso tipo di modifica.
+	\end{itemize}
+	\begin{tcolorbox}[enhanced jigsaw, breakable, title=Attenzione, colframe=red!70!black]
+	L'utilizzo di \texttt{executemany()} è fortemente sconsigliato, in quanto l'implementazione attuale è meno efficiente dell'esecuzione di ripetute \texttt{execute()} singole oppure, ancora meglio, un unico \texttt{INSERT} con più tuple:
+	\begin{lstlisting}
+	cur.execute("INSERT INTO test (id, num, data) VALUES (%s, %s, %s), (%s, %s), \ (%s, %s)", (100, 18.50, "abc", 68, 12.00, 'bar', 14, 30, 'tree'))
+	\end{lstlisting}
+	\end{tcolorbox}
+	\section{Passaggio di parametri}
+	Si noti che l'unico segnaposto utilizzato per il passaggio di parametri è \textcolor{blue}{\texttt{\%s}}, quindi non viene fatta distinzione tra i diversi tipi dei paramentri passati. Questo è possibile perché la conversione da tipo Python a tipo SQL viene fatta in automatico per tutti i tipi fondamentali.\vspace{10px}\\
+	% ridefinisco lo spazio tra righe
+	\renewcommand{\arraystretch}{1.5}
+	% aumento lo spazio tra colonne
+	\setlength{\tabcolsep}{20pt}
+	\begin{tabular}{l l}
+		\hline
+		Python & PostgreSQL\\
+		\hline
+		\texttt{None} & \texttt{NULL}\\
+		\texttt{int} & \texttt{SMALLINT, INTEGER, BIGINT}\\
+		\texttt{date} & \texttt{DATE}\\
+		\texttt{bool} & \texttt{BOOLEAN}\\
+		\texttt{Decimal} & \texttt{NUMERIC}\\
+		\texttt{time} & \texttt{TIME}\\
+		\texttt{float} & \texttt{REAL, DOUBLE}\\
+		\texttt{str} & \texttt{VARCHAR, TEXT}\\			
+		\texttt{datetime} & \texttt{TIMESTAMP}\\
+		\hline
+	\end{tabular}\vspace{10px}\\
+	È possibile anche dare un nome agli argomenti usando la sintassi \texttt{\%(name)s} per i segnaposti della query e dichiarando il mapping con i valori effettivi al momento del passaggio di parametri. In questo modo, è possibile specificare i valori in qualunque ordine.
+	\begin{tcolorbox}[enhanced jigsaw, breakable, title=Esempio, title filled]
+	\begin{lstlisting}
+	cur.execute("""INSERT INTO some_table (an_int, a_date, another_date, a_string) VALUES (%(int)s, %(date)s, %(date)s, %(str)s);""", \
+	{'int': 10, 'str': "O'Reilly", 'date': datetime.date(2005, 11, 18)})
+	\end{lstlisting}
+	\end{tcolorbox}	
+	Come ultima accortezza, si ricordi che i parametri vanno passati \textit{sempre} sotto forma di \textit{tupla} o \textit{lista}, anche se bisogna passare un singolo valore:
+	\begin{lstlisting}
+	cur.execute("INSERT INTO foo VALUES (%s)", "bar")    # WRONG
+	cur.execute("INSERT INTO foo VALUES (%s)", ("bar"))  # WRONG
+	cur.execute("INSERT INTO foo VALUES (%s)", ("bar",)) # correct
+	cur.execute("INSERT INTO foo VALUES (%s)", ["bar"])  # correct	
+	\end{lstlisting}
+	\section{Estrazione del risultato}
+	Abbiamo già accennato che le  che le tuple risultanti da una query vengono memorizzate all'interno del cursore, quindi esistono comandi specifici che permettono di prelevare queste tuple dal cursore.\\All'interno del cursore c'è un "puntatore" che punta alla prossima tupla da estrarre, e man mano che vengono estratte le tuple questo puntatore si sposta sempre più in basso nella tabella. Una volta che la tabella è terminata, non è più possibile "riposizionare" il puntatore in cima e rieseguire l'estrazione, bisogna eseguire nuovamente la query.
+	\begin{itemize}
+		\item \textcolor{blue}{\texttt{fetchone()}}: ritorna \textit{una sola} tupla della tabella risultato. Se la query non ha fornito alcun risultato, restituisce \texttt{None}.
+		\begin{lstlisting}
+	>>> cur.execute("SELECT * FROM test WHERE id = %s", (3,)) 
+	>>> cur.fetchone()
+	(3, 42, 'bar')
+		\end{lstlisting}
+		\item \textcolor{blue}{\texttt{fetchmany(<numero righe>)}}: ritorna le prime \texttt{<numero righe>} tuple dalla tabella risultato sotto forma di\textit{lista di tuple} a partire dalla tupla a cui è arrivato il puntatore, o una lista vuota nel caso non ci siano tuple. Se non viene specificato un numero, la classe cursore dispone di un attributo, \texttt{arraysize}, che specifica il numero di righe da prelevare ogni volta che viene invocata la \texttt{fetchmany()}. Questo valore è settato di default a uno, quindi chiamare una \texttt{fetchmany()} senza parametri equivale ad effettuare una \texttt{fetchone()}. 
+		\begin{lstlisting}
+	>>> cur.execute("SELECT * FROM test WHERE id < %s", (4,)) 
+	>>> cur.fetchmany(3)
+	[(1, 100, "abc'def"), (2, None, 'dada'), (3, 42, 'bar')]
+	>>> cur.fetchmany(2)
+	[]
+		\end{lstlisting}
+		\item \textcolor{blue}{\texttt{fetchall()}}: estrae tutte le tuple (rimanenti), restituendole sotto forma di lista di tuple.
+		\begin{lstlisting}
+	>>> cur.execute("SELECT * FROM test;")
+	>>> cur.fetchall()
+	[(1, 100, "abc'def"), (2, None, 'dada'), (3, 42, 'bar')]
+		\end{lstlisting}
+	\end{itemize}
+	Dato che un oggetto \texttt{cursor} è \textit{iterabile}, un altro modo per estrarre tutte le righe del risultato senza usare i metodi \texttt{fetch} elencati sopra è quello di iterare con un ciclo \texttt{for-each} sul cursore stesso:
+	\begin{lstlisting}
+	>>> cur.execute("SELECT * FROM test WHERE id < %s", (4,)) 
+	>>> for record in cur:
+	...     print(record, end=", ")
+	(1, 100, "abc'def"), (2, None, 'dada'), (3, 42, 'bar'),
+	\end{lstlisting}
+	La classe cursore dispone inoltre di alcuni attributi che possono essere utili per ottenere informazioni sull'esecuzione del comando:
+	\begin{itemize}
+		\item \textcolor{blue}{\texttt{rowcount}}: attributo read-only che contiene il numero di righe prodotte o modificate dall'ultima \texttt{execute()}. Assume il valore \texttt{-1} nel caso in cui non sia stato ancora inviato alcun comando oppure se il numero di righe è troppo grande e non può essere determinato a priori.
+		\item \textcolor{blue}{\texttt{rownumber}}: specifica la posizione del cursore rispetto alle righe della tabella risultato, nonché la posizione della prossima tupla da resituire.
+		\item \textcolor{blue}{\texttt{statusmessage}}: attributo read-only che contiene il testo del messaggio ritornato dall'ultimo comando inviato:
+		\begin{lstlisting}
+	>>> cur.execute("INSERT INTO test (num, data) VALUES (%s, %s)", (42, 'bar'))
+	>>> cur.statusmessage
+	'INSERT 0 1'
+		\end{lstlisting}
+		Per chiudere un cursore, si utilizza il metodo \textcolor{blue}{\texttt{close()}}. Tuttavia, questo si può evitare se si utilizza la keyword \textcolor{blue}{\texttt{with}} al momento della creazione del cursore:
+		\begin{lstlisting}
+	with connector.cursor() as cur:
+	...
+		\end{lstlisting}
+		Tutti i comandi che utilizzano il cursore \texttt{cur} devono essere scritti all'interno del blocco; quando si trova la prima istruzione al di fuori del blocco, il cursore viene chiuso in automatico senza bisogno di invocare la \texttt{close()}.
+	\end{itemize}
+	\chapter{Interazione tra Java e PostgreSQL}
+	\lstset{
+		language=Java,
+		aboveskip=3mm,
+		belowskip=3mm,
+		showstringspaces=false,
+		columns=flexible,
+		basicstyle={\small\ttfamily},
+		numbers=none,
+		numberstyle=\tiny\color{gray},
+		keywordstyle=\color{blue},
+		commentstyle=\color{dkgreen},
+		stringstyle=\color{mauve},
+		breaklines=true,
+		breakatwhitespace=true,
+		tabsize=4
+	}
+	Un programma Java può interagire con una base di dati esterna tramite l'API ufficiale, \texttt{JDBC} (Java DataBase Connectivity). Per PostgreSQL, esistono due implementazioni diverse di questa API, ma in questo corso di studierà solo la libreria \texttt{JDBC 42.x}\footnote{https://jdbc.postgresql.org/}, scritta interamente in Java.
+	\section{Connessione alla base di dati}
+	Prima di effettuare la connessione vera e propria, bisogna assicurarsi di caricare il driver tramite la seguente istruzione:
+	\begin{lstlisting}
+	Class.forName("org.postgresql.Driver")
+	\end{lstlisting}
+	dove \texttt{org.postgresql.Driver} è il nomer del driver. Il metodo \texttt{forName(...)} è un metodo statico che ritorna l'oggetto \texttt{Class} associato al nome che viene passato come parametro, utilizzando il class loader.
+	\paragraph{}La connessione vera e proprie viene stabilita tramite il seguente comando:
+	\begin{lstlisting}
+	Driver.getConnection(<url>, <user>, <password>)
+	\end{lstlisting}
+	che ritorna un oggetto di tipo \texttt{Connection}. I parametri da passare sono:
+	\begin{itemize}
+		\item \textcolor{blue}{\texttt{url}}, che può essere specificato nella forma \texttt{jdbc:postgresql://host/database}\footnote{Gli altri formati accettati sono descritti alla pagina https://jdbc.postgresql.org/documentation/head/connect.html }
+		\item \textcolor{blue}{\texttt{user}}, ovvero il nome dell'utente
+		\item \textcolor{blue}{\texttt{password}}, ovvero la password dell'utente
+	\end{itemize}
+	Per stabilire una connessione alla base di dati dell'università, ad esempio, si deve scrivere:
+	\begin{lstlisting}
+	DriverManager.getConnection("jdbc:postgresql://dbserver.scienze.univr.it/id311fgy", "id311fgy", "...")
+	\end{lstlisting}
+	Una volta creato l'oggetto \texttt{Connection}, si possono invocare alcuni metodi per inviare query alla base di dati, estrarre il risultato, o effettuare modifiche.\\
+	Ogni volta che vogliamo inviare un comando SQL, abbiamo bisogno di un oggetto \textcolor{blue}{\texttt{Statement}} o \textcolor{blue}{\texttt{PreparedStatement}} (vedi sezione 8.2), che possono essere instanziati tramite i seguenti metodi:
+	\begin{itemize}
+		\item \textcolor{blue}{\texttt{createStatement()}} ritorna un oggetto \texttt{Statement}
+		\item \textcolor{blue}{\texttt{prepareStatement("query")}} ritorna un oggetto \texttt{PreparedStatement}
+	\end{itemize}
+	Gli altri metodi fondamentali della classe \texttt{Connection} sono:
+	\begin{itemize}
+		\item \textcolor{blue}{\texttt{commit()}} registra la transazione. \textbf{Attenzione:} le connessioni JDBC sono in autocommit, quindi a meno di una specifica diversa (ovvero, a meno di eseguire \texttt{autoCommit(false)}) ogni comando viene inviato come una transazione singola e il commit viene fatto in modo automatico
+		\item \textcolor{blue}{\texttt{rollback()}} abortisce la transazione corrente
+		\item \textcolor{blue}{\texttt{close()}} chiude la connessione corrente
+	\end{itemize}
+	\section{Esecuzione di comandi SQL}
+	Nella sezione precedente abbiamo accennato al fatto che l'invio di comandi SQL necessita degli oggetti di tipo \texttt{Statement} o \texttt{PreparedStatement}.\\
+	La differenza tra i due sta nel fatto che il primo permette di inviare solo query "statiche", di cui conosciamo tutti i parametri fin dall'inizio, il secondo invece consente di inviare query con parametri variabili.
+	Per capire meglio la differenza, si osservino i seguenti esempi: qui si fa uso di un'oggetto \texttt{Statement}, perché il testo della query è completamente noto a propri.
+	\begin{lstlisting}
+	Statement st = conn.createStatement();
+	ResultSet rs = st.executeQuery("SELECT * FROM mytable WHERE column = 500");
+	
+	while(rs.next()){
+		System.out.println(rs.getString("column"))
+	}
+	\end{lstlisting}
+	In questo secondo pezzo di codice, invece, si deve ricorrere a un \texttt{PreparedStatement}, perché il valore da inserire nella clausola \texttt{WHERE} dipende dall'input che fornirà l'utente.
+	\begin{lstlisting}
+	Scanner keyboard = new Scanner(System.in);
+	System.out.println("Insert integer value: ");
+	int n = keyboard.nextInt();
+	
+	PreparedStatement pst = conn.prepareStatement("SELECT * FROM mytable WHERE column = ?");
+	pst.setInt(1, n);
+	
+	ResultSet rs = pst.executeQuery();
+	
+	while (rs.next()){
+		System.out.println(rs.getString("column"));
+	}
+	\end{lstlisting}
+	La query si esegue applicando all'oggetto \texttt{PreparedStatement} il metodo \textcolor{blue}{\texttt{executeQuery()}} e il risultato della query viene memorizzato in oggetto di tipo \textcolor{blue}{\texttt{ResultSet}}.\\
+	Per eseguire un comando di modifica (DDL o DML), invece, c'è il metodo \textcolor{blue}{\texttt{executeUpdate()}}, che restiuisce il numero di righe che sono state modificate (nel caso di istruzioni DML) oppure 0 per comandi che non restituiscono nulla (solitamente istruzioni DDL).\\
+	Per parametrizzare la query si utilizza un insieme di metodi nella forma \textcolor{blue}{\texttt{set*(n, <valore>)}}, che permettono di sostituire la \texttt{n}-esima occorrenza di \texttt{?} con \texttt{<valore>}. \\Java mette a disposizione un metodo \texttt{set*()} per ogni tipo fondamentale, quindi abbiamo: \textcolor{blue}{\texttt{setString(<indice>, <valore>)}}, \textcolor{blue}{\texttt{setInt(<indice>, <valore>)}} e simili.
+	\section{Estrazione del risultato}
+	Abbiamo detto che il risultato di una query inviata tramite il comando \texttt{executeQuery()} viene memorizzato in forma di tabella all'interno di un oggetto speciale chiamato \texttt{ResultSet}.\\Questo oggetto dispone di un cursore che all'inizio è posizionato subito prima della prima riga del risultato. Invocando il metodo \textcolor{blue}{\texttt{next()}}, viene spostato alla riga successiva, in modo che punti sempre alla prossima riga da restituire. Quando la tabella è terminata, \texttt{next()} ritorna \texttt{false}.\\Similmente a quanto già visto per Python, il cursore può spostarsi solo in avanti, e una volta terminata la scansione della tabella non è più possibile riportarlo all'inizio.\\
+	Vediamo quindi i metodi principali della classe \texttt{ResultSet}:
+	\begin{itemize}
+		\item \textcolor{blue}{\texttt{next()}}: sposta il cursore alla prossima riga. Restituisce \texttt{true} se la prossima riga esiste, \texttt{false} altrimenti
+		\item \textcolor{blue}{\texttt{get*(<nome colonna>)}}: sono un insieme di metodi che permettono di estrarre un dato di un certo tipo dalla colonna \texttt{nome colonna} della riga corrente. Come per l'insieme siste un metodo \texttt{get*()} per ogni tipo fondamentale di Java, quindi abbiamo: \textcolor{blue}{\texttt{getString("...")}}, \textcolor{blue}{\texttt{getInt("...")}}, \textcolor{blue}{\texttt{getDate("...")}}, \textcolor{blue}{\texttt{getBoolean("...")}} e simili.\\ In alternativa, è possibile passare come parametro l'indice della colonna, quindi si può scrivere un comando del tipo \textcolor{blue}{\texttt{getString(2)}}, che restituirà la stringa contenuta nella seconda colonna della riga corrente.\footnote{Le colonne sono numerate a partire da 1} 
+	\end{itemize}
+\end{document}
